@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "url.h"
 
-static char *str_hosttype[] = { "host ipv4", "host ipv6", "host domain", NULL };
+static char *str_hosttype[] = {"host ipv4", "host ipv6", "host domain", NULL};
 
 static char *strndup(const char *str, int n)
 {
@@ -69,7 +70,7 @@ url_field_t *url_parse(const char *str)
 	url_field_t *url;
 
 	query = NULL;
-	if ((url = (url_field_t *) malloc(sizeof(url_field_t))) == NULL)
+	if ((url = (url_field_t *)malloc(sizeof(url_field_t))) == NULL)
 		return NULL;
 	memset(url, 0, sizeof(url_field_t));
 	if (str && str[0]) {
@@ -184,30 +185,20 @@ void url_free(url_field_t * url)
 {
 	if (!url)
 		return;
-	if (url->href)
-		free(url->href);
-	if (url->schema)
-		free(url->schema);
-	if (url->username)
-		free(url->username);
-	if (url->password)
-		free(url->password);
-	if (url->host)
-		free(url->host);
-	if (url->port)
-		free(url->port);
-	if (url->path)
-		free(url->path);
-	if (url->query) {
-		int i;
-		for (i = 0; i < url->query_num; i++) {
-			free(url->query[i].name);
-			free(url->query[i].value);
-		}
-		free(url->query);
+	free(url->href);	/* free NULL, that's ok */
+	free(url->schema);
+	free(url->username);
+	free(url->password);
+	free(url->host);
+	free(url->port);
+	free(url->path);
+	int i;
+	for (i = 0; i < url->query_num; i++) {
+		free(url->query[i].name);
+		free(url->query[i].value);
 	}
-	if (url->fragment)
-		free(url->fragment);
+	free(url->query);
+	free(url->fragment);
 	free(url);
 }
 

@@ -4,6 +4,8 @@
 #include <ctype.h>
 #include <dirent.h>
 
+#include "pid.h"
+
 #define READ_BUF_SIZE	512
 
 /*

@@ -3,11 +3,10 @@
 
 #include "http.h"
 
-/**
- * http_build_get_header - build http GET header
- * @hostname: in
- * @path: in
- * @header: out
+/*
+ * @hostname: the remote hostname
+ * @path: the path to get
+ * @header: built header
  */
 int http_build_get_header(const char *hostname, const char *path, char *header)
 {
@@ -22,11 +21,10 @@ int http_build_get_header(const char *hostname, const char *path, char *header)
 	return strlen(header);
 }
 
-/**
- * http_build_post_header - build http POST header
- * @hostname: in
- * @path: in
- * @header: out
+/*
+ * @hostname: the remote hostname
+ * @path: the path to post
+ * @header: built header
  */
 int http_build_post_header(const char *hostname, const char *path, char *header)
 {
@@ -41,8 +39,7 @@ int http_build_post_header(const char *hostname, const char *path, char *header)
 	return strlen(header);
 }
 
-/**
- * http_get_body_pos - get http body position
+/*
  * @buff: stored response packet
  * @size: size of buff
  */

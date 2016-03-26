@@ -1,4 +1,5 @@
 #include <string.h>
+
 #include "kmp.h"
 
 static void get_next(const char *p, int *next)

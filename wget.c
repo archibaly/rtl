@@ -8,6 +8,9 @@
 
 #define BUFF_SIZE	4096
 
+/*
+ * so far, just support http
+ */
 int wget(const char *orignal_url, const char *filename)
 {
 	url_field_t *url = url_parse(orignal_url);

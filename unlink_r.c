@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "unlink_r.h"
+
 int unlink_r(const char* name)
 {
 	struct stat st;

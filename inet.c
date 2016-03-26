@@ -8,6 +8,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "inet.h"
+
 int get_mac(char *mac, const char *type)
 {
 	if (NULL == mac)
