@@ -4,6 +4,19 @@
 #include <arpa/inet.h>
 
 #include "msg.h"
+#include "tea.h"
+#include "readn.h"
+#include "writen.h"
+
+int payload_tea_encrypt(uint8_t *payload, int32_t len)
+{
+	return tea_encrypt(payload, len, TEA_KEY);
+}
+
+int payload_tea_decrypt(uint8_t *payload, uint16_t len)
+{
+	return tea_decrypt(payload, len, TEA_KEY);
+}
 
 /*
  * ret = msg_pack(&msg, 0, 0,
@@ -89,10 +102,10 @@ int msg_pack(msg *msg, uint8_t ecp, uint16_t fun, int sum, ...)
 /*
  * ret = msg_unpack(&msg,
  * 					2,
- * 					MSG_DATA_TYPE_STRING, sizeof(str), str,
- * 					MSG_DATA_TYPE_UINT32, sizeof(uint32_t), i);
+ * 					MSG_DATA_TYPE_STRING, str,
+ * 					MSG_DATA_TYPE_UINT32, i);
  */
-int msg_unpack(msg *msg, int sum, ...)
+int msg_unpack(const msg *msg, int sum, ...)
 {
 	if (msg == NULL)
 		return -1;
@@ -160,4 +173,22 @@ int msg_unpack(msg *msg, int sum, ...)
 	va_end(args);
 
 	return -1;
+}
+
+int msg_write(int fd, const msg *msg)
+{
+	return writen(fd, (uint8_t *)msg, ntohl(msg->head.len));
+}
+
+int msg_read(int fd, msg *msg)
+{
+	int len = sizeof(msg_head);
+	int n = readn(fd, (uint8_t *)&msg->head, len);
+	if (n != sizeof(msg_head))
+		return -1;
+
+	len = ntohl(msg->head.len);
+	n += readn(fd, (uint8_t *)&msg->data, len);
+
+	return n;
 }
