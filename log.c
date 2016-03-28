@@ -60,6 +60,9 @@ int log_write(log_level_t level, const char *fmt, ...)
 
 	pos = log_level_string(level, log_buf);
 
+	int fd = fileno(log_fp);
+	writew_lock(fd);
+
 	struct time time;
 	time_get(&time);
 	sprintf(log_buf + pos, "[%04d/%02d/%02d %02d:%02d:%02d] ",
@@ -72,8 +75,6 @@ int log_write(log_level_t level, const char *fmt, ...)
 	
 	strcat(log_buf, "\n");
 
-	int fd = fileno(log_fp);
-	writew_lock(fd);
 	fputs(log_buf, log_fp);
 	fflush(log_fp);
 	unlock(fd);
