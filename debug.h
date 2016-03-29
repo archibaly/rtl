@@ -7,11 +7,13 @@
 #include <string.h>
 #include <errno.h>
 
-#define ERROR(fmt) fprintf(stderr, fmt ": %s\n", strerror(errno))
+#define INFO(str) fprintf(stdout, "%s\n", str)
+#define ERROR(str) fprintf(stderr, str ": %s\n", strerror(errno))
 
 #else
 
-#define ERROR(...)
+#define INFO(str)
+#define ERROR(str)
 
 #endif
 

@@ -23,7 +23,7 @@ void socket_set_non_blocking(int sockfd)
 
 	flags |= O_NONBLOCK;
 	if (fcntl(sockfd, F_SETFL, flags) == -1) {
-		ERROR("fcntl");
+		ERROR("fcntl()");
 		abort();
 	}
 }

@@ -3,7 +3,9 @@
 
 #include "writen.h"
 
-/* write "n" bytes to a descriptor */
+/*
+ * write "n" bytes to a descriptor
+ */
 ssize_t writen(int fd, const void *vptr, size_t n)
 {
 	size_t nleft = n;
@@ -18,7 +20,7 @@ ssize_t writen(int fd, const void *vptr, size_t n)
 			else
 				return -1;
 		} else if (nwritten == 0) {
-			return -1;					/* error */
+			return -1;	/* error */
 		}
 
 		nleft -= nwritten;

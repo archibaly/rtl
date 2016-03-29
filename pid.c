@@ -31,11 +31,11 @@ int find_pid_by_name(const char* pname, pid_t *pid, int size)
 		char buffer[READ_BUF_SIZE];
 		char name[READ_BUF_SIZE];
 
-		/* Must skip ".." since that is outside /proc */
+		/* must skip ".." since that is outside /proc */
 		if (strcmp(next->d_name, "..") == 0)
 			continue;
 
-		/* If it isn't a number, we don't want it */
+		/* if it isn't a number, we don't want it */
 		if (!isdigit(*next->d_name))
 			continue;
 
@@ -49,7 +49,7 @@ int find_pid_by_name(const char* pname, pid_t *pid, int size)
 		}
 		fclose(status);
 
-		/* Buffer should contain a string like "Name:   binary_name" */
+		/* buffer should contain a string like "Name:   binary_name" */
 		sscanf(buffer, "%*s %s", name);
 		if (strcmp(pname, name) == 0) {
 			if (i <= size - 1)
