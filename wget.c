@@ -5,6 +5,7 @@
 #include "url.h"
 #include "http.h"
 #include "socket.h"
+#include "debug.h"
 
 #define BUFF_SIZE	4096
 
@@ -20,9 +21,7 @@ int wget(const char *orignal_url, const char *filename)
 	int sockfd;
 	int port = url->port == NULL ? 80 : atoi(url->port);
 	if ((sockfd = socket_connect(url->host, url->host_type, port)) < 0) {
-	#ifdef DEBUG
-		perror("socket_connect()");
-	#endif
+		ERROR("socket_connect()");
 		return -1;
 	}
 
@@ -31,27 +30,21 @@ int wget(const char *orignal_url, const char *filename)
 	url_free(url);
 
 	if (socket_send(sockfd, buff, n) < 0) {
-	#ifdef DEBUG
-		perror("socket_send()");
-	#endif
+		ERROR("socket_send()");
 		return -1;
 	}
 
 	/* store to file */
 	FILE *fp = fopen(filename, "w");
 	if (fp == NULL) {
-	#ifdef DEBUG
-		perror("fopen()");
-	#endif
+		ERROR("fopen()");
 		return -1;
 	}
 
 	/* receive http header first */
 	n = socket_recv(sockfd, buff, sizeof(buff));
 	if (n < 0) {
-	#ifdef DEBUG
-		perror("socket_recv()");
-	#endif
+		ERROR("socket_recv()");
 		return -1;
 	}
 
@@ -65,9 +58,7 @@ int wget(const char *orignal_url, const char *filename)
 		} else if (n == 0) {	/* receive done */
 			break;
 		} else {
-		#ifdef DEBUG
-			perror("socket_recv()");
-		#endif
+			ERROR("socket_recv()");
 			return -1;
 		}
 	}

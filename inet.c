@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 
 #include "inet.h"
+#include "debug.h"
 
 int get_mac(char *mac, const char *type)
 {
@@ -18,16 +19,12 @@ int get_mac(char *mac, const char *type)
 	int sock = 0;
 
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-	#ifdef DEBUG
-		perror("socket()");
-	#endif
+		ERROR("socket()");
 		return -1;
 	}
 	strcpy(_ifreq.ifr_name, type);
 	if(ioctl(sock, SIOCGIFHWADDR, &_ifreq) < 0) {
-	#ifdef DEBUG
-		perror("ioctl()");
-	#endif
+		ERROR("ioctl()");
 		return -1;
 	}
 
@@ -46,17 +43,13 @@ int get_ip(char *ip, const char *type)
 	int sock;
 	struct ifreq ifr;
 	if ((sock = socket(AF_INET, SOCK_DGRAM, 0) < 0)) {
-	#ifdef DEBUG
-		perror("socket()");
-	#endif
+		ERROR("socket()");
 		return -1;
 	}
 
 	strcpy(ifr.ifr_name, type);
 	if (ioctl(sock, SIOCGIFADDR, &ifr) <  0) {
-	#ifdef DEBUG
-		perror("ioctl()");
-	#endif
+		ERROR("ioctl()");
 		return -1;
 	}
 	sprintf(ip, "%s", inet_ntoa(((struct sockaddr_in*)&(ifr.ifr_addr))->sin_addr));

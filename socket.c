@@ -9,6 +9,7 @@
 #include <netdb.h>
 
 #include "socket.h"
+#include "debug.h"
 
 void socket_set_non_blocking(int sockfd)
 {
@@ -16,17 +17,13 @@ void socket_set_non_blocking(int sockfd)
 
 	flags = fcntl(sockfd, F_GETFL, 0);
 	if (flags == -1) {
-	#ifdef DEBUG
-		perror("fcntl");
-	#endif
+		ERROR("fcntl()");
 		abort();
 	}
 
 	flags |= O_NONBLOCK;
 	if (fcntl(sockfd, F_SETFL, flags) == -1) {
-	#ifdef DEBUG
-		perror("fcntl");
-	#endif
+		ERROR("fcntl");
 		abort();
 	}
 }
@@ -40,9 +37,7 @@ static void socket_reuse_endpoint(int sockfd)
 		 * if we cannot set an option then there's something very wrong
 		 * with the system, so we abort the application
 		 */
-	#ifdef DEBUG
-		perror("setsockopt");
-	#endif
+		ERROR("setsockopt()");
 		abort();
 	}
 }
@@ -57,9 +52,7 @@ int socket_create(void)
 	 */
 	signal(SIGPIPE, SIG_IGN);
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-	#ifdef DEBUG
-		perror("socket");
-	#endif
+		ERROR("socket()");
 		abort();
 	}
 	socket_reuse_endpoint(sockfd);
@@ -76,9 +69,7 @@ void socket_bind(int sockfd, unsigned short port)
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	server_addr.sin_port = htons(port);
 	if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-	#ifdef DEBUG
-		perror("bind");
-	#endif
+		ERROR("bind()");
 		abort();
 	}
 }
@@ -87,9 +78,7 @@ void socket_bind(int sockfd, unsigned short port)
 void socket_start_listening(int sockfd)
 {
 	if (listen(sockfd, SOMAXCONN) == -1) {
-	#ifdef DEBUG
-		perror("listen");
-	#endif
+		ERROR("listen()");
 		abort();
 	}
 }
