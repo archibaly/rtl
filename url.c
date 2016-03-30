@@ -23,7 +23,7 @@ static char *strndup(const char *str, int n)
 	return dst;
 }
 
-int host_is_ipv4(char *str)
+int host_is_ipv4(const char *str)
 {
 	if (!str)
 		return 0;

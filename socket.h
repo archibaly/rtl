@@ -16,7 +16,7 @@ void socket_bind(int sockfd, unsigned short port);
 void socket_set_non_blocking(int sockfd);
 void socket_start_listening(int sockfd);
 void tcp_server_init(uint16_t port);
-int socket_connect(const char *host, host_type_t type, uint16_t port);
+int socket_connect(const char *host, uint16_t port);
 int socket_recv(int sockfd, void *buff, int size);
 int socket_send(int sockfd, const void *buff, int size);
 

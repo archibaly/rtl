@@ -103,15 +103,15 @@ static int get_ip(const char *hostname, char *ip)
  * socket_connect - connect to tcp server
  * @host: hostname or ip of the server
  */
-int socket_connect(const char *host, host_type_t type, uint16_t port)
+int socket_connect(const char *host, uint16_t port)
 {
 	char ip[INET_ADDRSTRLEN];
 	int sockfd;
 	struct sockaddr_in server_addr;
 
-	if (type == HOST_IPV4) {
+	if (host_is_ipv4(host)) {
 		strcpy(ip, host);
-	} else if (type == HOST_DOMAIN) {
+	} else {
 		if (get_ip(host, ip) < 0) {
 			return -1;
 		}

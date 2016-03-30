@@ -40,6 +40,7 @@ typedef struct _url_field {
 	char *fragment;
 } url_field_t;
 
+int host_is_ipv4(const char *str);
 url_field_t *url_parse(const char *str);
 void url_free(url_field_t * url);
 void url_field_print(url_field_t * url);
