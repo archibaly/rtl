@@ -12,14 +12,14 @@ static int found(char *line, const char *name)
 {
 	trim(line);
 	if (kmp(line, name) == 0) {
-		if (ISSPACE(line[strlen(name)]) || line[strlen(name)] == DELIM) {
-			int i = strlen(name);
-			while (line[i] != DELIM)
-				i++;
-			i++;
-			while (ISSPACE(line[i]))
-				i++;
-			return i;
+		int pos = strlen(name);
+		if (ISSPACE(line[pos]) || line[pos] == DELIM) {
+			while (line[pos] != DELIM)
+				pos++;
+			pos++;
+			while (ISSPACE(line[pos]))
+				pos++;
+			return pos;
 		}
 	}
 	return 0;

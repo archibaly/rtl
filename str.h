@@ -1,6 +1,8 @@
 #ifndef _STR_H_
 #define _STR_H_
 
+#define ISSPACE(x)	((x)==' '||(x)=='\t')
+
 char *trim(char *str);
 int streq(const char *a, const char *b);
 int is_lower(char ch);

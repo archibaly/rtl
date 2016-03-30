@@ -2,8 +2,6 @@
 
 #include "str.h"
 
-#define ISSPACE(x)	((x)==' '||(x)=='\t')
-
 char *trim(char *str)
 {
 	char *tail, *head;
