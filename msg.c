@@ -13,7 +13,7 @@ int payload_tea_encrypt(uint8_t *payload, int32_t len)
 	return tea_encrypt(payload, len, TEA_KEY);
 }
 
-int payload_tea_decrypt(uint8_t *payload, uint16_t len)
+int payload_tea_decrypt(uint8_t *payload, int32_t len)
 {
 	return tea_decrypt(payload, len, TEA_KEY);
 }
@@ -93,6 +93,9 @@ int msg_pack(msg *msg, uint8_t ecp, uint16_t fun, int sum, ...)
 		}
 		offset += len;
 	}
+
+	if (msg->head.ecp == MSG_TEA_ENCRYPTION)
+		offset = payload_tea_encrypt(msg->data, offset);
 	msg->head.len = htonl(offset + sizeof(msg_head));
 
 	va_end(args);
@@ -105,7 +108,7 @@ int msg_pack(msg *msg, uint8_t ecp, uint16_t fun, int sum, ...)
  * 					MSG_DATA_TYPE_STRING, str,
  * 					MSG_DATA_TYPE_UINT32, i);
  */
-int msg_unpack(const msg *msg, int sum, ...)
+int msg_unpack(msg *msg, int sum, ...)
 {
 	if (msg == NULL)
 		return -1;
@@ -124,6 +127,9 @@ int msg_unpack(const msg *msg, int sum, ...)
 
 	int len;
 	int offset = 0;
+
+	if (msg->head.ecp == MSG_TEA_ENCRYPTION)
+		payload_tea_decrypt(msg->data, ntohl(msg->head.len) - sizeof(msg_head));
 
 	va_start(args, sum);
 	for (i = 0; i < sum; i++) {
