@@ -33,7 +33,7 @@ typedef struct {
 int payload_tea_encrypt(uint8_t *payload, int32_t len);
 int payload_tea_decrypt(uint8_t *payload, int32_t len);
 int msg_pack(msg *msg, uint8_t ecp, uint16_t fun, int sum, ...);
-int msg_unpack(msg *msg, int sum, ...);
+int msg_unpack(msg *msg, uint16_t fun, int sum, ...);
 int msg_write(int fd, const msg *msg);
 int msg_read(int fd, msg *msg);
 

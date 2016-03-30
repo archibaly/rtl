@@ -27,13 +27,6 @@ int payload_tea_decrypt(uint8_t *payload, int32_t len)
  */
 int msg_pack(msg *msg, uint8_t ecp, uint16_t fun, int sum, ...)
 {
-	if (msg == NULL)
-		return -1;
-
-	msg->head.code = MSG_VALID_CODE;
-	msg->head.ecp = ecp;
-	msg->head.fun = htons(fun);
-
 	int i;
 	int type;
 	int len;
@@ -47,6 +40,13 @@ int msg_pack(msg *msg, uint8_t ecp, uint16_t fun, int sum, ...)
 	int8_t i8;
 	int16_t i16;
 	int32_t i32;
+
+	if (msg == NULL)
+		return -1;
+
+	msg->head.code = MSG_VALID_CODE;
+	msg->head.ecp = ecp;
+	msg->head.fun = htons(fun);
 
 	va_start(args, sum);
 	for (i = 0; i < sum; i++) {
@@ -108,11 +108,8 @@ int msg_pack(msg *msg, uint8_t ecp, uint16_t fun, int sum, ...)
  * 					MSG_DATA_TYPE_STRING, str,
  * 					MSG_DATA_TYPE_UINT32, i);
  */
-int msg_unpack(msg *msg, int sum, ...)
+int msg_unpack(msg *msg, uint16_t fun, int sum, ...)
 {
-	if (msg == NULL)
-		return -1;
-
 	int i;
 	int type;
 	va_list args;
@@ -127,6 +124,12 @@ int msg_unpack(msg *msg, int sum, ...)
 
 	int len;
 	int offset = 0;
+
+	if (msg == NULL)
+		return -1;
+
+	if (fun != ntohs(msg->head.fun))
+		return -1;
 
 	if (msg->head.ecp == MSG_TEA_ENCRYPTION)
 		payload_tea_decrypt(msg->data, ntohl(msg->head.len) - sizeof(msg_head));
@@ -178,7 +181,7 @@ int msg_unpack(msg *msg, int sum, ...)
 	}
 	va_end(args);
 
-	return -1;
+	return 0;
 }
 
 int msg_write(int fd, const msg *msg)
@@ -190,7 +193,7 @@ int msg_read(int fd, msg *msg)
 {
 	int len = sizeof(msg_head);
 	int n = readn(fd, (uint8_t *)&msg->head, len);
-	if (n != sizeof(msg_head))
+	if (n != len)
 		return -1;
 
 	len = ntohl(msg->head.len);
