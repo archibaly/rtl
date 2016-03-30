@@ -35,13 +35,13 @@ int unlink_r(const char* name)
 		if (!strcmp(de->d_name, "..") || !strcmp(de->d_name, "."))
 			continue;
 		sprintf(dn, "%s/%s", name, de->d_name);
-		if (unlink_recursive(dn) < 0) {
+		if (unlink_r(dn) < 0) {
 			fail = 1;
 			break;
 		}
 		errno = 0;
 	}
-	/* in case readdir or unlink_recursive failed */
+	/* in case readdir or unlink_r failed */
 	if (fail || errno < 0) {
 		int save = errno;
 		closedir(dir);

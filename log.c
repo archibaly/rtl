@@ -26,20 +26,20 @@ static int log_level_string(log_level_t log_level, char *buf)
 	int pos = 0;
 
 	switch (log_level) {
-		case LOG_LEVEL_INFO:
-			strcpy(buf, "[INFO] ");
-			pos = strlen("[INFO] ");
-			break;
-		case LOG_LEVEL_WARN:
-			strcpy(buf, "[WARN] ");
-			pos = strlen("[WARN] ");
-			break;
-		case LOG_LEVEL_ERRO:
-			strcpy(buf, "[ERRO] ");
-			pos = strlen("[ERRO] ");
-			break;
-		default:
-			break;
+	case LOG_LEVEL_INFO:
+		strcpy(buf, "[INFO] ");
+		pos = strlen("[INFO] ");
+		break;
+	case LOG_LEVEL_WARN:
+		strcpy(buf, "[WARN] ");
+		pos = strlen("[WARN] ");
+		break;
+	case LOG_LEVEL_ERRO:
+		strcpy(buf, "[ERRO] ");
+		pos = strlen("[ERRO] ");
+		break;
+	default:
+		break;
 	}
 	return pos;
 }
