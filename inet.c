@@ -42,7 +42,7 @@ int get_ip(char *ip, const char *type)
 {
 	int sock;
 	struct ifreq ifr;
-	if ((sock = socket(AF_INET, SOCK_DGRAM, 0) < 0)) {
+	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		ERROR("socket()");
 		return -1;
 	}
