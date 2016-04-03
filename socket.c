@@ -3,6 +3,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -93,7 +94,7 @@ static int get_ip(const char *hostname, char *ip)
 	if (ht == NULL)
 		return -1;
 
-	if (inet_ntop(AF_INET, ht->h_addr_list[0], ip, INET_ADDRSTRLEN) == NULL)
+	if (!inet_ntop(AF_INET, ht->h_addr_list[0], ip, INET_ADDRSTRLEN))
 		return -1;
 
 	return 0;
@@ -115,8 +116,6 @@ int socket_connect(const char *host, uint16_t port)
 		if (get_ip(host, ip) < 0) {
 			return -1;
 		}
-	} else {
-		return -1;
 	}
 
 	sockfd = socket_create(TCP);

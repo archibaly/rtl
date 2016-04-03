@@ -11,7 +11,7 @@
 #define TCP	SOCK_STREAM
 #define UDP	SOCK_DGRAM
 
-int socket_create(void);
+int socket_create(int type);
 void socket_bind(int sockfd, unsigned short port);
 void socket_set_non_blocking(int sockfd);
 void socket_start_listening(int sockfd);
