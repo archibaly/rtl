@@ -7,12 +7,12 @@
 #include <string.h>
 #include <errno.h>
 
-#define INFO(fmt, ...) fprintf(stdout, fmt "\n", __VA_ARGS__)
+#define INFO(...) fprintf(stdout, __VA_ARGS__)
 #define ERROR(str) fprintf(stderr, str ": %s\n", strerror(errno))
 
 #else
 
-#define INFO(fmt, ...)
+#define INFO(...)
 #define ERROR(str)
 
 #endif

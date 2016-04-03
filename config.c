@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "debug.h"
 #include "config.h"
 #include "kmp.h"
 #include "lock.h"
@@ -11,17 +12,19 @@
 static int found(char *line, const char *name)
 {
 	trim(line);
-	if (kmp(line, name) == 0) {
-		int pos = strlen(name);
-		if (ISSPACE(line[pos]) || line[pos] == DELIM) {
-			while (line[pos] != DELIM)
-				pos++;
+	if (kmp(line, name) < 0)
+		return 0;
+	
+	int pos = strlen(name);
+	if (ISSPACE(line[pos]) || line[pos] == DELIM) {
+		while (line[pos] != DELIM)
 			pos++;
-			while (ISSPACE(line[pos]))
-				pos++;
-			return pos;
-		}
+		pos++;
+		while (ISSPACE(line[pos]))
+			pos++;
+		return pos;
 	}
+
 	return 0;
 }
 
@@ -39,7 +42,7 @@ int config_get(const char *filename, const char *name, char *value)
 	char line[1024];
     while (fgets(line, sizeof(line), fp) != NULL) {
 		if ((pos = found(line, name))) {
-			strncpy(value, line + pos, strlen(line + pos) - 1);
+			strcpy(value, line + pos);
 			ret = 0;
 		}
 	}
@@ -72,9 +75,12 @@ int config_set(const char *filename, const char *name, const char *value)
 	writew_lock(_fd);
     while (fgets(line, sizeof(line), fp) != NULL) {
 		if (found(line, name)) {
-			sprintf(line, "%s = %s\n", name, value);
+			sprintf(line, "%s = %s", name, value);
 			ret = 0;
 		}
+		int len = strlen(line);
+		line[len] = '\n';
+		line[len + 1] = '\0';
 		fputs(line, _fp);
 	}
 

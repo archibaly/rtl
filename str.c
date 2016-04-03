@@ -2,21 +2,32 @@
 
 #include "str.h"
 
-char *trim(char *str)
+char *ltrim(char *s)
 {
-	char *tail, *head;
+	char *p = s;
+	while (ISSPACE(*p))
+		p++;
+	strcpy(s, p);
+	return s;
+}
 
-	for (tail = str + strlen(str) - 1; tail >= str; tail--)
-		if (!ISSPACE(*tail))
-			break;
-	tail[1] = 0;
-	for (head = str; head <= tail; head++)
-		if (!ISSPACE(*head))
-			break;
-	if (head != str)
-		memcpy(str, head, (tail - head + 2) * sizeof(char));
+char *rtrim(char *s)
+{
+	int i;
 
-	return str;
+	i = strlen(s) - 1;
+	while (ISSPACE(s[i]))
+		i--;
+	s[i + 1] = '\0';
+
+	return s;
+}
+ 
+char *trim(char *s)
+{
+	ltrim(s);
+	rtrim(s);
+	return s;
 }
 
 int streq(const char *a, const char *b)
@@ -38,17 +49,6 @@ int is_upper(char ch)
 	return 0;
 }
 
-char *strupper(char *str)
-{
-	int i;
-	int len = strlen(str);
-	for (i = 0; i < len; i++)
-		if (is_lower(str[i]))
-			str[i] -= 32;
-	str[len] = '\0';
-	return str;
-}
-
 char *strlower(char *str)
 {
 	int i;
@@ -56,6 +56,17 @@ char *strlower(char *str)
 	for (i = 0; i < len; i++)
 		if (is_upper(str[i]))
 			str[i] += 32;
+	str[len] = '\0';
+	return str;
+}
+
+char *strupper(char *str)
+{
+	int i;
+	int len = strlen(str);
+	for (i = 0; i < len; i++)
+		if (is_lower(str[i]))
+			str[i] -= 32;
 	str[len] = '\0';
 	return str;
 }
