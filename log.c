@@ -7,13 +7,23 @@
 #include "lock.h"
 
 static FILE *log_fp = NULL;
+static int log_max_line = 2048;
+static int current_line = 0;
 static log_level_t log_level = LOG_LEVEL_INFO;
 
 int log_set_file(const char *filename)
 {
-	if ((log_fp = fopen(filename, "a")) == NULL)	
+	if ((log_fp = fopen(filename, "w")) == NULL)
 		return -1;
 	return 0;
+}
+
+/*
+ * set max number of line in log file
+ */
+int log_set_max_line(int n)
+{
+	log_max_line = n;
 }
 
 void log_set_level(log_level_t level)
@@ -44,6 +54,15 @@ static int log_level_string(log_level_t log_level, char *buf)
 	return pos;
 }
 
+static void log_max_line_check(FILE *fp)
+{
+	current_line++;
+	if (current_line > log_max_line) {
+		current_line = 0;
+		rewind(log_fp);
+	}
+}
+
 /*
  * format: [LOG_LEVEL] [time] message
  * example:
@@ -52,7 +71,7 @@ static int log_level_string(log_level_t log_level, char *buf)
 int log_write(log_level_t level, const char *fmt, ...)
 {
 	int pos;
-	va_list params;
+	va_list args;
 	char log_buf[1024];
 
 	if (level < log_level)
@@ -69,12 +88,13 @@ int log_write(log_level_t level, const char *fmt, ...)
 			time.year, time.mon, time.day, time.hour, time.min, time.sec);
 	pos += 22;
 
-	va_start(params, fmt);
-	vsnprintf(log_buf + pos, sizeof(log_buf) - 1, fmt, params);
-	va_end(params);
+	va_start(args, fmt);
+	vsnprintf(log_buf + pos, sizeof(log_buf) - 1, fmt, args);
+	va_end(args);
 	
 	strcat(log_buf, "\n");
 
+	log_max_line_check(log_fp);
 	fputs(log_buf, log_fp);
 	fflush(log_fp);
 	unlock(fd);
