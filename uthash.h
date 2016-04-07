@@ -24,26 +24,26 @@
 #ifndef _UTHASH_H_
 #define _UTHASH_H_
 
-#include <string.h>   /* memcmp, strlen */
-#include <stddef.h>   /* ptrdiff_t */
-#include <stdlib.h>   /* exit() */
+#include <string.h>		/* memcmp, strlen */
+#include <stddef.h>		/* ptrdiff_t */
+#include <stdlib.h>		/* exit() */
 
 /* These macros use decltype or the earlier __typeof GNU extension.
  * As decltype is only available in newer compilers (VS2010 or gcc 4.3+
  * when compiling c++ source) this code uses whatever method is needed
  * or, for VS2008 where neither is available, uses casting workarounds.
  */
-#if defined(_MSC_VER)   /* MS compiler */
-#if _MSC_VER >= 1600 && defined(__cplusplus)  /* VS2010 or newer in C++ mode */
+#if defined(_MSC_VER)		/* MS compiler */
+#if _MSC_VER >= 1600 && defined(__cplusplus)	/* VS2010 or newer in C++ mode */
 #define DECLTYPE(x) (decltype(x))
-#else                   /* VS2008 or older (or VS2010 in C mode) */
+#else /* VS2008 or older (or VS2010 in C mode) */
 #define NO_DECLTYPE
 #define DECLTYPE(x)
 #endif
 #elif defined(__BORLANDC__) || defined(__LCC__) || defined(__WATCOMC__)
 #define NO_DECLTYPE
 #define DECLTYPE(x)
-#else                   /* GNU, Sun and other compilers */
+#else /* GNU, Sun and other compilers */
 #define DECLTYPE(x) (__typeof(x))
 #endif
 
@@ -80,26 +80,26 @@ typedef unsigned char uint8_t;
 #define UTHASH_VERSION 1.9.9
 
 #ifndef uthash_fatal
-#define uthash_fatal(msg) exit(-1)        /* fatal error (out of memory,etc) */
+#define uthash_fatal(msg) exit(-1)	/* fatal error (out of memory,etc) */
 #endif
 #ifndef uthash_malloc
-#define uthash_malloc(sz) malloc(sz)      /* malloc fcn                      */
+#define uthash_malloc(sz) malloc(sz)	/* malloc fcn                      */
 #endif
 #ifndef uthash_free
-#define uthash_free(ptr,sz) free(ptr)     /* free fcn                        */
+#define uthash_free(ptr,sz) free(ptr)	/* free fcn                        */
 #endif
 
 #ifndef uthash_noexpand_fyi
-#define uthash_noexpand_fyi(tbl)          /* can be defined to log noexpand  */
+#define uthash_noexpand_fyi(tbl)	/* can be defined to log noexpand  */
 #endif
 #ifndef uthash_expand_fyi
-#define uthash_expand_fyi(tbl)            /* can be defined to log expands   */
+#define uthash_expand_fyi(tbl)	/* can be defined to log expands   */
 #endif
 
 /* initial number of buckets */
-#define HASH_INITIAL_NUM_BUCKETS 32U     /* initial number of buckets        */
-#define HASH_INITIAL_NUM_BUCKETS_LOG2 5U /* lg2 of initial number of buckets */
-#define HASH_BKT_CAPACITY_THRESH 10U     /* expand when bucket count reaches */
+#define HASH_INITIAL_NUM_BUCKETS 32U	/* initial number of buckets        */
+#define HASH_INITIAL_NUM_BUCKETS_LOG2 5U	/* lg2 of initial number of buckets */
+#define HASH_BKT_CAPACITY_THRESH 10U	/* expand when bucket count reaches */
 
 /* calculate the element whose hash handle address is hhe */
 #define ELMT_FROM_HH(tbl,hhp) ((void*)(((char*)(hhp)) - ((tbl)->hho)))
@@ -153,10 +153,10 @@ do {                                                                            
 
 #define HASH_MAKE_TABLE(hh,head)                                                 \
 do {                                                                             \
-  (head)->hh.tbl = (UT_hash_table*)uthash_malloc(                                \
-                  sizeof(UT_hash_table));                                        \
+  (head)->hh.tbl = (ut_hash_table*)uthash_malloc(                                \
+                  sizeof(ut_hash_table));                                        \
   if (!((head)->hh.tbl))  { uthash_fatal( "out of memory"); }                    \
-  memset((head)->hh.tbl, 0, sizeof(UT_hash_table));                              \
+  memset((head)->hh.tbl, 0, sizeof(ut_hash_table));                              \
   (head)->hh.tbl->tail = &((head)->hh);                                          \
   (head)->hh.tbl->num_buckets = HASH_INITIAL_NUM_BUCKETS;                        \
   (head)->hh.tbl->log2_num_buckets = HASH_INITIAL_NUM_BUCKETS_LOG2;              \
@@ -227,29 +227,29 @@ do {                                                                            
  */
 #define HASH_DELETE(hh,head,delptr)                                              \
 do {                                                                             \
-    struct UT_hash_handle *_hd_hh_del;                                           \
+    struct ut_hash_handle *_hd_hh_del;                                           \
     if ( ((delptr)->hh.prev == NULL) && ((delptr)->hh.next == NULL) )  {         \
         uthash_free((head)->hh.tbl->buckets,                                     \
                     (head)->hh.tbl->num_buckets*sizeof(struct UT_hash_bucket) ); \
         HASH_BLOOM_FREE((head)->hh.tbl);                                         \
-        uthash_free((head)->hh.tbl, sizeof(UT_hash_table));                      \
+        uthash_free((head)->hh.tbl, sizeof(ut_hash_table));                      \
         head = NULL;                                                             \
     } else {                                                                     \
         unsigned _hd_bkt;                                                        \
         _hd_hh_del = &((delptr)->hh);                                            \
         if ((delptr) == ELMT_FROM_HH((head)->hh.tbl,(head)->hh.tbl->tail)) {     \
             (head)->hh.tbl->tail =                                               \
-                (UT_hash_handle*)((ptrdiff_t)((delptr)->hh.prev) +               \
+                (ut_hash_handle*)((ptrdiff_t)((delptr)->hh.prev) +               \
                 (head)->hh.tbl->hho);                                            \
         }                                                                        \
         if ((delptr)->hh.prev != NULL) {                                         \
-            ((UT_hash_handle*)((ptrdiff_t)((delptr)->hh.prev) +                  \
+            ((ut_hash_handle*)((ptrdiff_t)((delptr)->hh.prev) +                  \
                     (head)->hh.tbl->hho))->next = (delptr)->hh.next;             \
         } else {                                                                 \
             DECLTYPE_ASSIGN(head,(delptr)->hh.next);                             \
         }                                                                        \
         if (_hd_hh_del->next != NULL) {                                          \
-            ((UT_hash_handle*)((ptrdiff_t)_hd_hh_del->next +                     \
+            ((ut_hash_handle*)((ptrdiff_t)_hd_hh_del->next +                     \
                     (head)->hh.tbl->hho))->prev =                                \
                     _hd_hh_del->prev;                                            \
         }                                                                        \
@@ -259,7 +259,6 @@ do {                                                                            
     }                                                                            \
     HASH_FSCK(hh,head);                                                          \
 } while (0)
-
 
 /* convenience forms of HASH_FIND/HASH_ADD/HASH_DEL */
 #define HASH_FIND_STR(head,findstr,out)                                          \
@@ -290,7 +289,7 @@ do {                                                                            
 #define HASH_OOPS(...) do { fprintf(stderr,__VA_ARGS__); exit(-1); } while (0)
 #define HASH_FSCK(hh,head)                                                       \
 do {                                                                             \
-    struct UT_hash_handle *_thh;                                                 \
+    struct ut_hash_handle *_thh;                                                 \
     if (head) {                                                                  \
         unsigned _bkt_i;                                                         \
         unsigned _count;                                                         \
@@ -330,7 +329,7 @@ do {                                                                            
                     _thh->prev, _prev );                                         \
            }                                                                     \
            _prev = (char*)ELMT_FROM_HH((head)->hh.tbl, _thh);                    \
-           _thh = ( _thh->next ?  (UT_hash_handle*)((char*)(_thh->next) +        \
+           _thh = ( _thh->next ?  (ut_hash_handle*)((char*)(_thh->next) +        \
                                   (head)->hh.tbl->hho) : NULL );                 \
         }                                                                        \
         if (_count != (head)->hh.tbl->num_items) {                               \
@@ -376,7 +375,6 @@ do {                                                                            
   }                                                                              \
   bkt = (hashv) & (num_bkts-1U);                                                 \
 } while (0)
-
 
 /* SAX/FNV/OAT/JEN hash functions are macro variants of those listed at
  * http://eternallyconfuzzled.com/tuts/algorithms/jsw_tut_hashing.aspx
@@ -608,7 +606,7 @@ do {                                                                   \
   hashv = _mur_h1;                                                     \
   bkt = hashv & (num_bkts-1U);                                         \
 } while(0)
-#endif  /* HASH_USING_NO_STRICT_ALIASING */
+#endif /* HASH_USING_NO_STRICT_ALIASING */
 
 /* key comparison function; return 0 if keys equal */
 #define HASH_KEYCMP(a,b,len) memcmp(a,b,(unsigned long)(len))
@@ -686,7 +684,7 @@ do {                                                                            
 do {                                                                             \
     unsigned _he_bkt;                                                            \
     unsigned _he_bkt_i;                                                          \
-    struct UT_hash_handle *_he_thh, *_he_hh_nxt;                                 \
+    struct ut_hash_handle *_he_thh, *_he_hh_nxt;                                 \
     UT_hash_bucket *_he_new_buckets, *_he_newbkt;                                \
     _he_new_buckets = (UT_hash_bucket*)uthash_malloc(                            \
              2UL * tbl->num_buckets * sizeof(struct UT_hash_bucket));            \
@@ -730,7 +728,6 @@ do {                                                                            
     uthash_expand_fyi(tbl);                                                      \
 } while(0)
 
-
 /* This is an adaptation of Simon Tatham's O(n log(n)) mergesort */
 /* Note that HASH_SORT assumes the hash handle name to be hh.
  * HASH_SRT was added to allow the hash handle name to be passed in.
@@ -740,7 +737,7 @@ do {                                                                            
 do {                                                                             \
   unsigned _hs_i;                                                                \
   unsigned _hs_looping,_hs_nmerges,_hs_insize,_hs_psize,_hs_qsize;               \
-  struct UT_hash_handle *_hs_p, *_hs_q, *_hs_e, *_hs_list, *_hs_tail;            \
+  struct ut_hash_handle *_hs_p, *_hs_q, *_hs_e, *_hs_list, *_hs_tail;            \
   if (head != NULL) {                                                            \
       _hs_insize = 1;                                                            \
       _hs_looping = 1;                                                           \
@@ -756,7 +753,7 @@ do {                                                                            
               _hs_psize = 0;                                                     \
               for ( _hs_i = 0; _hs_i  < _hs_insize; _hs_i++ ) {                  \
                   _hs_psize++;                                                   \
-                  _hs_q = (UT_hash_handle*)((_hs_q->next != NULL) ?              \
+                  _hs_q = (ut_hash_handle*)((_hs_q->next != NULL) ?              \
                           ((void*)((char*)(_hs_q->next) +                        \
                           (head)->hh.tbl->hho)) : NULL);                         \
                   if (! (_hs_q) ) { break; }                                     \
@@ -765,14 +762,14 @@ do {                                                                            
               while ((_hs_psize > 0U) || ((_hs_qsize > 0U) && (_hs_q != NULL))) {\
                   if (_hs_psize == 0U) {                                         \
                       _hs_e = _hs_q;                                             \
-                      _hs_q = (UT_hash_handle*)((_hs_q->next != NULL) ?          \
+                      _hs_q = (ut_hash_handle*)((_hs_q->next != NULL) ?          \
                               ((void*)((char*)(_hs_q->next) +                    \
                               (head)->hh.tbl->hho)) : NULL);                     \
                       _hs_qsize--;                                               \
                   } else if ( (_hs_qsize == 0U) || (_hs_q == NULL) ) {           \
                       _hs_e = _hs_p;                                             \
                       if (_hs_p != NULL){                                        \
-                        _hs_p = (UT_hash_handle*)((_hs_p->next != NULL) ?        \
+                        _hs_p = (ut_hash_handle*)((_hs_p->next != NULL) ?        \
                                 ((void*)((char*)(_hs_p->next) +                  \
                                 (head)->hh.tbl->hho)) : NULL);                   \
                        }                                                         \
@@ -783,14 +780,14 @@ do {                                                                            
                              ) <= 0) {                                           \
                       _hs_e = _hs_p;                                             \
                       if (_hs_p != NULL){                                        \
-                        _hs_p = (UT_hash_handle*)((_hs_p->next != NULL) ?        \
+                        _hs_p = (ut_hash_handle*)((_hs_p->next != NULL) ?        \
                                ((void*)((char*)(_hs_p->next) +                   \
                                (head)->hh.tbl->hho)) : NULL);                    \
                        }                                                         \
                       _hs_psize--;                                               \
                   } else {                                                       \
                       _hs_e = _hs_q;                                             \
-                      _hs_q = (UT_hash_handle*)((_hs_q->next != NULL) ?          \
+                      _hs_q = (ut_hash_handle*)((_hs_q->next != NULL) ?          \
                               ((void*)((char*)(_hs_q->next) +                    \
                               (head)->hh.tbl->hho)) : NULL);                     \
                       _hs_qsize--;                                               \
@@ -833,7 +830,7 @@ do {                                                                            
 do {                                                                             \
   unsigned _src_bkt, _dst_bkt;                                                   \
   void *_last_elt=NULL, *_elt;                                                   \
-  UT_hash_handle *_src_hh, *_dst_hh, *_last_elt_hh=NULL;                         \
+  ut_hash_handle *_src_hh, *_dst_hh, *_last_elt_hh=NULL;                         \
   ptrdiff_t _dst_hho = ((char*)(&(dst)->hh_dst) - (char*)(dst));                 \
   if (src != NULL) {                                                             \
     for(_src_bkt=0; _src_bkt < (src)->hh_src.tbl->num_buckets; _src_bkt++) {     \
@@ -842,7 +839,7 @@ do {                                                                            
           _src_hh = _src_hh->hh_next) {                                          \
           _elt = ELMT_FROM_HH((src)->hh_src.tbl, _src_hh);                       \
           if (cond(_elt)) {                                                      \
-            _dst_hh = (UT_hash_handle*)(((char*)_elt) + _dst_hho);               \
+            _dst_hh = (ut_hash_handle*)(((char*)_elt) + _dst_hho);               \
             _dst_hh->key = _src_hh->key;                                         \
             _dst_hh->keylen = _src_hh->keylen;                                   \
             _dst_hh->hashv = _src_hh->hashv;                                     \
@@ -873,16 +870,16 @@ do {                                                                            
     uthash_free((head)->hh.tbl->buckets,                                         \
                 (head)->hh.tbl->num_buckets*sizeof(struct UT_hash_bucket));      \
     HASH_BLOOM_FREE((head)->hh.tbl);                                             \
-    uthash_free((head)->hh.tbl, sizeof(UT_hash_table));                          \
+    uthash_free((head)->hh.tbl, sizeof(ut_hash_table));                          \
     (head)=NULL;                                                                 \
   }                                                                              \
 } while(0)
 
 #define HASH_OVERHEAD(hh,head)                                                   \
  ((head != NULL) ? (                                                             \
- (size_t)(((head)->hh.tbl->num_items   * sizeof(UT_hash_handle))   +             \
+ (size_t)(((head)->hh.tbl->num_items   * sizeof(ut_hash_handle))   +             \
           ((head)->hh.tbl->num_buckets * sizeof(UT_hash_bucket))   +             \
-           sizeof(UT_hash_table)                                   +             \
+           sizeof(ut_hash_table)                                   +             \
            (HASH_BLOOM_BYTELEN))) : 0U)
 
 #ifdef NO_DECLTYPE
@@ -900,74 +897,72 @@ for(((el)=(head)), ((tmp)=DECLTYPE(el)((head!=NULL)?(head)->hh.next:NULL));     
 #define HASH_CNT(hh,head) ((head != NULL)?((head)->hh.tbl->num_items):0U)
 
 typedef struct UT_hash_bucket {
-   struct UT_hash_handle *hh_head;
-   unsigned count;
+	struct ut_hash_handle *hh_head;
+	unsigned count;
 
-   /* expand_mult is normally set to 0. In this situation, the max chain length
-    * threshold is enforced at its default value, HASH_BKT_CAPACITY_THRESH. (If
-    * the bucket's chain exceeds this length, bucket expansion is triggered).
-    * However, setting expand_mult to a non-zero value delays bucket expansion
-    * (that would be triggered by additions to this particular bucket)
-    * until its chain length reaches a *multiple* of HASH_BKT_CAPACITY_THRESH.
-    * (The multiplier is simply expand_mult+1). The whole idea of this
-    * multiplier is to reduce bucket expansions, since they are expensive, in
-    * situations where we know that a particular bucket tends to be overused.
-    * It is better to let its chain length grow to a longer yet-still-bounded
-    * value, than to do an O(n) bucket expansion too often.
-    */
-   unsigned expand_mult;
-
+	/* expand_mult is normally set to 0. In this situation, the max chain length
+	 * threshold is enforced at its default value, HASH_BKT_CAPACITY_THRESH. (If
+	 * the bucket's chain exceeds this length, bucket expansion is triggered).
+	 * However, setting expand_mult to a non-zero value delays bucket expansion
+	 * (that would be triggered by additions to this particular bucket)
+	 * until its chain length reaches a *multiple* of HASH_BKT_CAPACITY_THRESH.
+	 * (The multiplier is simply expand_mult+1). The whole idea of this
+	 * multiplier is to reduce bucket expansions, since they are expensive, in
+	 * situations where we know that a particular bucket tends to be overused.
+	 * It is better to let its chain length grow to a longer yet-still-bounded
+	 * value, than to do an O(n) bucket expansion too often.
+	 */
+	unsigned expand_mult;
 } UT_hash_bucket;
 
 /* random signature used only to find hash tables in external analysis */
 #define HASH_SIGNATURE 0xa0111fe1u
 #define HASH_BLOOM_SIGNATURE 0xb12220f2u
 
-typedef struct UT_hash_table {
-   UT_hash_bucket *buckets;
-   unsigned num_buckets, log2_num_buckets;
-   unsigned num_items;
-   struct UT_hash_handle *tail; /* tail hh in app order, for fast append    */
-   ptrdiff_t hho; /* hash handle offset (byte pos of hash handle in element */
+typedef struct ut_hash_table {
+	UT_hash_bucket *buckets;
+	unsigned num_buckets, log2_num_buckets;
+	unsigned num_items;
+	struct ut_hash_handle *tail;	/* tail hh in app order, for fast append */
+	ptrdiff_t hho;					/* hash handle offset (byte pos of hash handle in element */
 
-   /* in an ideal situation (all buckets used equally), no bucket would have
-    * more than ceil(#items/#buckets) items. that's the ideal chain length.
-	*/
-   unsigned ideal_chain_maxlen;
+	/* in an ideal situation (all buckets used equally), no bucket would have
+	 * more than ceil(#items/#buckets) items. that's the ideal chain length.
+	 */
+	unsigned ideal_chain_maxlen;
 
-   /* nonideal_items is the number of items in the hash whose chain position
-    * exceeds the ideal chain maxlen. these items pay the penalty for an uneven
-    * hash distribution; reaching them in a chain traversal takes >ideal steps
-	*/
-   unsigned nonideal_items;
+	/* nonideal_items is the number of items in the hash whose chain position
+	 * exceeds the ideal chain maxlen. these items pay the penalty for an uneven
+	 * hash distribution; reaching them in a chain traversal takes >ideal steps
+	 */
+	unsigned nonideal_items;
 
-   /* ineffective expands occur when a bucket doubling was performed, but
-    * afterward, more than half the items in the hash had nonideal chain
-    * positions. If this happens on two consecutive expansions we inhibit any
-    * further expansion, as it's not helping; this happens when the hash
-    * function isn't a good fit for the key domain. When expansion is inhibited
-    * the hash will still work, albeit no longer in constant time.
-	*/
-   unsigned ineff_expands, noexpand;
+	/* ineffective expands occur when a bucket doubling was performed, but
+	 * afterward, more than half the items in the hash had nonideal chain
+	 * positions. If this happens on two consecutive expansions we inhibit any
+	 * further expansion, as it's not helping; this happens when the hash
+	 * function isn't a good fit for the key domain. When expansion is inhibited
+	 * the hash will still work, albeit no longer in constant time.
+	 */
+	unsigned ineff_expands, noexpand;
 
-   uint32_t signature; /* used only to find hash tables in external analysis */
+	uint32_t signature;		/* used only to find hash tables in external analysis */
 #ifdef HASH_BLOOM
-   uint32_t bloom_sig; /* used only to test bloom exists in external analysis */
-   uint8_t *bloom_bv;
-   uint8_t bloom_nbits;
+	uint32_t bloom_sig;		/* used only to test bloom exists in external analysis */
+	uint8_t *bloom_bv;
+	uint8_t bloom_nbits;
 #endif
+} ut_hash_table;
 
-} UT_hash_table;
+typedef struct ut_hash_handle {
+	struct ut_hash_table *tbl;
+	void *prev;						/* prev element in app order      */
+	void *next;						/* next element in app order      */
+	struct ut_hash_handle *hh_prev;	/* previous hh in bucket order    */
+	struct ut_hash_handle *hh_next;	/* next hh in bucket order        */
+	void *key;						/* ptr to enclosing struct's key  */
+	unsigned keylen;				/* enclosing struct's key len     */
+	unsigned hashv;					/* result of hash-fcn(key)        */
+} ut_hash_handle;
 
-typedef struct UT_hash_handle {
-   struct UT_hash_table *tbl;
-   void *prev;                       /* prev element in app order      */
-   void *next;                       /* next element in app order      */
-   struct UT_hash_handle *hh_prev;   /* previous hh in bucket order    */
-   struct UT_hash_handle *hh_next;   /* next hh in bucket order        */
-   void *key;                        /* ptr to enclosing struct's key  */
-   unsigned keylen;                  /* enclosing struct's key len     */
-   unsigned hashv;                   /* result of hash-fcn(key)        */
-} UT_hash_handle;
-
-#endif  /* _UTHASH_H_ */
+#endif /* _UTHASH_H_ */
