@@ -1,34 +1,33 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "log.h"
 #include "time.h"
 #include "lock.h"
 
-static FILE *log_fp = NULL;
-static int log_max_line = 2048;
-static int current_line = 0;
-static log_level_t log_level = LOG_LEVEL_INFO;
+#define LOG_MAX_SIZE	(1024 * 1024)	/* 1MB */
 
-int log_set_file(const char *filename)
+static struct log log = {NULL, -1, "", LOG_MAX_SIZE, LOG_LEVEL_INFO};
+
+int log_open(const char *filename)
 {
-	if ((log_fp = fopen(filename, "w")) == NULL)
+	if ((log.fp = fopen(filename, "a")) == NULL)
 		return -1;
+	strcpy(log.name, filename);
+	log.fd = fileno(log.fp);
 	return 0;
 }
 
-/*
- * set max number of line in log file
- */
-int log_set_max_line(int n)
+void log_set_max_size(int bytes)
 {
-	log_max_line = n;
+	log.max_size = bytes;
 }
 
 void log_set_level(log_level_t level)
 {
-	log_level = level;
+	log.level = level;
 }
 
 static int log_level_string(log_level_t log_level, char *buf)
@@ -54,12 +53,12 @@ static int log_level_string(log_level_t log_level, char *buf)
 	return pos;
 }
 
-static void log_max_line_check(FILE *fp)
+static void log_max_size_check(void)
 {
-	current_line++;
-	if (current_line > log_max_line) {
-		current_line = 0;
-		rewind(log_fp);
+	fseek(log.fp, 0, SEEK_END);
+	if (ftell(log.fp) > log.max_size) {
+		unlink(log.name);	/* just delete it */
+		log_set_file_name(log.name);
 	}
 }
 
@@ -74,19 +73,19 @@ int log_write(log_level_t level, const char *fmt, ...)
 	va_list args;
 	char log_buf[1024];
 
-	if (level < log_level)
+	if (level < log.level)
 		return 0;
+
+	log_max_size_check();
 
 	pos = log_level_string(level, log_buf);
 
-	int fd = fileno(log_fp);
-	writew_lock(fd);
+	writew_lock(log.fd);
 
-	struct time time;
-	time_get(&time);
-	sprintf(log_buf + pos, "[%04d/%02d/%02d %02d:%02d:%02d] ",
-			time.year, time.mon, time.day, time.hour, time.min, time.sec);
-	pos += 22;
+	char time[32];
+	time_fmt(time, sizeof(time));
+	sprintf(log_buf + pos, "[%s] ", time);
+	pos = strlen(log_buf);
 
 	va_start(args, fmt);
 	vsnprintf(log_buf + pos, sizeof(log_buf) - 1, fmt, args);
@@ -94,10 +93,19 @@ int log_write(log_level_t level, const char *fmt, ...)
 	
 	strcat(log_buf, "\n");
 
-	log_max_line_check(log_fp);
-	fputs(log_buf, log_fp);
-	fflush(log_fp);
-	unlock(fd);
+	fputs(log_buf, log.fp);
+	fflush(log.fp);
+
+	unlock(log.fd);
 
 	return 0;
+}
+
+void log_close(void)
+{
+	fclose(log.fp);
+	log.fp = NULL;
+	log.fd = -1;
+	log.max_size = LOG_MAX_SIZE;
+	log.level = LOG_LEVEL_INFO;
 }
