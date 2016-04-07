@@ -7,12 +7,30 @@
 #include "time.h"
 #include "lock.h"
 
-#define LOG_MAX_SIZE	(1024 * 1024)	/* 1MB */
+#define LOG_MAX_NAME_SIZE	64
+#define LOG_MAX_FILE_SIZE	(1024 * 1024)	/* 1MB */
 
-static struct log log = {NULL, -1, "", LOG_MAX_SIZE, LOG_LEVEL_INFO};
+struct log {
+	FILE *fp;
+	int fd;
+	char name[LOG_MAX_NAME_SIZE];
+	int max_size;
+	log_level_t level;
+};
+
+static struct log log;
+
+static void log_init(void)
+{
+	log.fp = NULL;
+	log.fd = -1;
+	log.max_size = LOG_MAX_FILE_SIZE;
+	log.level = LOG_LEVEL_INFO;
+}
 
 int log_open(const char *filename)
 {
+	log_init();
 	if ((log.fp = fopen(filename, "a")) == NULL)
 		return -1;
 	strcpy(log.name, filename);
@@ -67,14 +85,14 @@ static void log_max_size_check(void)
  * example:
  *     [ERRO] [2015/03/25 14:58:03] some serious problem happened
  */
-int log_write(log_level_t level, const char *fmt, ...)
+void log_write(log_level_t level, const char *fmt, ...)
 {
 	int pos;
 	va_list args;
 	char log_buf[1024];
 
 	if (level < log.level)
-		return 0;
+		return;
 
 	log_max_size_check();
 
@@ -97,15 +115,10 @@ int log_write(log_level_t level, const char *fmt, ...)
 	fflush(log.fp);
 
 	unlock(log.fd);
-
-	return 0;
 }
 
 void log_close(void)
 {
 	fclose(log.fp);
-	log.fp = NULL;
-	log.fd = -1;
-	log.max_size = LOG_MAX_SIZE;
-	log.level = LOG_LEVEL_INFO;
+	log_init();
 }
