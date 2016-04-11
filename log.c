@@ -18,23 +18,16 @@ struct log {
 	log_level_t level;
 };
 
-static struct log log;
-
-static void log_init(void)
-{
-	log.fp = NULL;
-	log.fd = -1;
-	log.max_size = LOG_MAX_FILE_SIZE;
-	log.level = LOG_LEVEL_INFO;
-}
+static struct log log = {NULL, -1, "", LOG_MAX_FILE_SIZE, LOG_LEVEL_INFO};
 
 int log_open(const char *filename)
 {
-	log_init();
 	if ((log.fp = fopen(filename, "a")) == NULL)
 		return -1;
-	strcpy(log.name, filename);
 	log.fd = fileno(log.fp);
+	strcpy(log.name, filename);
+	log.max_size = LOG_MAX_FILE_SIZE;
+	log.level = LOG_LEVEL_INFO;
 	return 0;
 }
 
@@ -91,7 +84,7 @@ void log_write(log_level_t level, const char *fmt, ...)
 	va_list args;
 	char log_buf[1024];
 
-	if (level < log.level)
+	if (level < log.level && !log.fp)
 		return;
 
 	log_max_size_check();
@@ -120,5 +113,5 @@ void log_write(log_level_t level, const char *fmt, ...)
 void log_close(void)
 {
 	fclose(log.fp);
-	log_init();
+	log.fp = NULL;
 }
