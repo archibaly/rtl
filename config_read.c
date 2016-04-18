@@ -176,11 +176,11 @@ static int parse_line(char *string)
     while ((c = *string++) != '\0') {
 		if (c == DQUOTE) {
 			if (!have_name) {
-				ERROR("unexpected '%c'\n", DQUOTE);
+				ERROR("unexpected '%c'", DQUOTE);
 				return 0;
 			}
 			if (have_quote && !END_LINE(*string)) {
-				ERROR("unexpected '%c' after '%c'\n", *string, DQUOTE);
+				ERROR("unexpected '%c' after '%c'", *string, DQUOTE);
 				return 0;
 			}
 			have_quote = !have_quote;
@@ -190,7 +190,7 @@ static int parse_line(char *string)
 				value[i++] = c;
 		} else if (c == delim) {
 			if (have_name) {
-				ERROR("unexpected '%c'\n", delim);
+				ERROR("unexpected '%c'", delim);
 				return 0;
 			}
 
@@ -201,13 +201,13 @@ static int parse_line(char *string)
 			break;
 		} else if (c == PAREN_OPEN) {
 			if (!have_name) {
-				ERROR("unexpected '%c'\n", PAREN_OPEN);
+				ERROR("unexpected '%c'", PAREN_OPEN);
 				return 0;
 			}
 			have_paren = 1;
 		} else if (c == PAREN_CLOSE) {
 			if (have_paren && !END_LINE(*string)) {
-				ERROR("unexpected '%c' after '%c'\n", *string, PAREN_CLOSE);
+				ERROR("unexpected '%c' after '%c'", *string, PAREN_CLOSE);
 				return 0;
 			}
 		} else {

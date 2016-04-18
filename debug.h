@@ -5,8 +5,9 @@
 
 #include <stdio.h>
 
-#define INFO(...) fprintf(stdout, __VA_ARGS__)
-#define ERROR(...) fprintf(stderr, __VA_ARGS__)
+#define INFO(fmt, ...) fprintf(stdout, "%s(%d): " fmt "\n", __FILE__, __LINE__, ## __VA_ARGS__)
+#define ERROR(fmt, ...) fprintf(stderr, "%s(%d): " fmt "\n", __FILE__, __LINE__, ## __VA_ARGS__)
+
 
 #else
 
