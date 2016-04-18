@@ -58,7 +58,7 @@ int http_get_body_pos(const char *buff, int size)
 
 int http_send_request(enum request type, const char *host, uint16_t port, const char *path, char *resp, int len)
 {
-	char header[512];
+	char header[1024];
 	int header_len;
 
 	if (type == GET)
