@@ -69,7 +69,7 @@ static void log_max_size_check(void)
 	fseek(log.fp, 0, SEEK_END);
 	if (ftell(log.fp) > log.max_size) {
 		unlink(log.name);	/* just delete it */
-		log_set_file_name(log.name);
+		log_open(log.name);
 	}
 }
 
