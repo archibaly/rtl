@@ -11,6 +11,22 @@
 #include "inet.h"
 #include "debug.h"
 
+int mac_format_valid(char *possiblemac)
+{
+	char hex2[3];
+	return sscanf(possiblemac,
+				  "%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]",
+				  hex2, hex2, hex2, hex2, hex2, hex2) == 6;
+}
+
+int ip_format_valid(char *possibleip)
+{
+	char hex3[4];
+	return sscanf(possibleip,
+				  "%3[0-9].%3[0-9].%3[0-9].%3[0-9]",
+				  hex3, hex3, hex3, hex3) == 4;
+}
+
 int get_mac(char *mac, const char *type)
 {
 	if (NULL == mac)
@@ -28,7 +44,7 @@ int get_mac(char *mac, const char *type)
 		return -1;
 	}
 
-	sprintf(mac, "%02X%02X%02X%02X%02X%02X",
+	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X",
 			(unsigned char)_ifreq.ifr_hwaddr.sa_data[0], (unsigned char)_ifreq.ifr_hwaddr.sa_data[1],
 			(unsigned char)_ifreq.ifr_hwaddr.sa_data[2], (unsigned char)_ifreq.ifr_hwaddr.sa_data[3],
 			(unsigned char)_ifreq.ifr_hwaddr.sa_data[4], (unsigned char)_ifreq.ifr_hwaddr.sa_data[5]);
