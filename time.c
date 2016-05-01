@@ -17,10 +17,8 @@ void time_get(struct time *t)
 	t->sec = pt->tm_sec;
 }
 
-void time_fmt(char *fmt, int size)
+void time_fmt(const struct time *time, char *fmt, int size)
 {
-	struct time time;
-	time_get(&time);
-	snprintf(fmt, size, "%04d/%02d/%02d %02d:%02d:%02d",
+	snprintf(fmt, size - 1, "%04d/%02d/%02d %02d:%02d:%02d",
 			 time.year, time.mon, time.day, time.hour, time.min, time.sec);
 }

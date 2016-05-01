@@ -93,8 +93,10 @@ void log_write(log_level_t level, const char *fmt, ...)
 
 	writew_lock(log.fd);
 
+	struct time t;
 	char time[32];
-	time_fmt(time, sizeof(time));
+	time_get($t);
+	time_fmt(&t, time, sizeof(time));
 	sprintf(log_buf + pos, "[%s] ", time);
 	pos = strlen(log_buf);
 
