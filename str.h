@@ -7,9 +7,8 @@ char *ltrim(char *s);
 char *rtrim(char *s);
 char *trim(char *str);
 int streq(const char *a, const char *b);
-int is_lower(char ch);
-int is_upper(char ch);
 char *strlower(char *str);
 char *strupper(char *str);
+size_t strlcpy(char *dst, const char *src, size_t siz);
 
 #endif /* _STR_H_ */
