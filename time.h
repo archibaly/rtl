@@ -11,6 +11,6 @@ struct time {
 };
 
 void time_get(struct time *t);
-void time_fmt(char *fmt, int size);
+void time_fmt(const struct time *time, char *fmt, int size);
 
 #endif /* _TIME_H_ */
