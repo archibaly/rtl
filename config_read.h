@@ -30,6 +30,10 @@
 
 #include "uthash.h"
 
+/* example: */
+/* name = jacky */
+/* family = (father,mother,sisters) */
+
 typedef struct {
 	/* name of the option */
 	char *name;

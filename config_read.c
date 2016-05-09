@@ -44,27 +44,27 @@ static config_opt_t *config_table = NULL;
 static char delim = '=';
 static char comment = '#';
 
-static int explode(const char *src, const char *tokens, char ***list, size_t * len);
+static int explode(const char *src, const char *tokens, char ***list, size_t *len);
 
 config_opt_t *new_config_opt(const char *name, const char *value)
 {
-    config_opt_t *opt;
+	config_opt_t *opt;
 
-    if ((opt = malloc(sizeof(config_opt_t))) == NULL)
+	if ((opt = malloc(sizeof(config_opt_t))) == NULL)
 		exit(EXIT_FAILURE);
 
-    opt->name = strdup(name);
-    opt->value = value == NULL ? NULL : strdup(value);
+	opt->name = strdup(name);
+	opt->value = value == NULL ? NULL : strdup(value);
 
-    opt->is_array = 0;
-    opt->size = 1;
+	opt->is_array = 0;
+	opt->size = 1;
 
-    return opt;
+	return opt;
 }
 
 config_opt_t *config_add_opt(const char *name, const char *value)
 {
-    config_opt_t *opt;
+	config_opt_t *opt;
 
 	HASH_FIND_STR(config_table, name, opt);
 	if (opt == NULL) {
@@ -72,13 +72,12 @@ config_opt_t *config_add_opt(const char *name, const char *value)
 		HASH_ADD_STR(config_table, name, opt);
 	}
 
-    return opt;
+	return opt;
 }
 
-config_opt_t *config_add_opt_array(const char *name, char **values,
-				   const size_t size)
+config_opt_t *config_add_opt_array(const char *name, char **values, const size_t size)
 {
-    config_opt_t *opt;
+	config_opt_t *opt;
 
 	HASH_FIND_STR(config_table, name, opt);
 	if (opt == NULL) {
@@ -89,91 +88,88 @@ config_opt_t *config_add_opt_array(const char *name, char **values,
 		HASH_ADD_STR(config_table, name, opt);
 	}
 
-    return opt;
+	return opt;
 }
 
 config_opt_t *config_get_opt(const char *name)
 {
-    config_opt_t *opt;
+	config_opt_t *opt;
 
 	HASH_FIND_STR(config_table, name, opt);
 
-    return opt;
+	return opt;
 }
 
 char *config_get_value(const char *name)
 {
-    char *value;
-    config_opt_t *opt;
+	char *value;
+	config_opt_t *opt;
 
-    opt = config_get_opt(name);
+	opt = config_get_opt(name);
 
-    if (opt)
+	if (opt)
 		value = opt->value;
-    else
+	else
 		value = NULL;
 
-    return value;
+	return value;
 }
 
 void config_set_delim(char d)
 {
-    delim = d;
+	delim = d;
 }
 
 int config_find_opt_value(char *name, char *value)
 {
-    size_t i;
-    config_opt_t *opt;
+	size_t i;
+	config_opt_t *opt;
 
-    opt = config_get_opt(name);
-
-    if (opt == NULL)
+	opt = config_get_opt(name);
+	if (opt == NULL)
 		return 0;
-
-    if (!opt->is_array)
+	if (!opt->is_array)
 		return 0;
-
-    for (i = 0; i < opt->size; i++) {
+	for (i = 0; i < opt->size; i++) {
 		if (strcmp(opt->values[i], value) == 0)
 			return -1;
-    }
+	}
 
-    return 0;
+	return 0;
 }
 
 void config_print_opt(char *name)
 {
-    size_t i;
-    config_opt_t *opt;
+	size_t i;
+	config_opt_t *opt;
 
-    opt = config_get_opt(name);
+	opt = config_get_opt(name);
 
-    if (opt == NULL)
+	if (opt == NULL)
 		puts("NULL ==> NULL");
 
-    if (!opt->is_array) {
+	if (!opt->is_array) {
 		fprintf(stdout, "NAME ==> %s\n", opt->name);
 		fprintf(stdout, "VALUE ==> %s\n", opt->value);
 		return;
-    }
+	}
 
-    fprintf(stdout, "NAME ==> %s\n", opt->name);
+	fprintf(stdout, "NAME ==> %s\n", opt->name);
 
-    for (i = 0; i < opt->size; i++)
+	for (i = 0; i < opt->size; i++)
 		fprintf(stdout, "VALUE [%ld] ==> %s\n", i, opt->values[i]);
 }
 
 static int parse_line(char *string)
 {
-    char value[255], name[255], c;
-    unsigned int have_name, have_quote, have_paren;
-    char **values;
-    size_t i = 0, len;
+	char value[255], name[255], c;
+	unsigned int have_name, have_quote, have_paren;
+	char **values;
+	size_t i = 0, len;
 
-    have_name = have_quote = have_paren = 0;
+	have_name = have_quote = have_paren = 0;
 
-    while ((c = *string++) != '\0') {
+	while ((c = *string++) != '\0') {
 		if (c == DQUOTE) {
 			if (!have_name) {
 				ERROR("unexpected '%c'", DQUOTE);
@@ -216,32 +212,32 @@ static int parse_line(char *string)
 			else
 				name[i++] = c;
 		}
-    }
+	}
 
-    value[i] = '\0';
+	value[i] = '\0';
 
-    if (!have_name)
+	if (!have_name)
 		return -1;
 
-    if (have_paren) {
+	if (have_paren) {
 		explode(value, ",", &values, &len);
 		config_add_opt_array(name, values, len);
-    } else {
+	} else {
 		config_add_opt(name, value);
 	}
 
-    return -1;
+	return -1;
 }
 
 int config_load(const char *filename)
 {
-    FILE *fp;
-    char line[255];
+	FILE *fp;
+	char line[255];
 
-    if ((fp = fopen(filename, "r")) == NULL)
+	if ((fp = fopen(filename, "r")) == NULL)
 		return 0;
 
-    while (fgets(line, sizeof(line), fp) != NULL) {
+	while (fgets(line, sizeof(line), fp) != NULL) {
 		/* ignore lines that start with a comment character */
 		if (*line == comment)
 			continue;
@@ -250,26 +246,26 @@ int config_load(const char *filename)
 			fclose(fp);
 			return 0;
 		}
-    }
+	}
 
-    fclose(fp);
-    return -1;
+	fclose(fp);
+	return -1;
 }
 
-void config_free_opt(config_opt_t * opt)
+void config_free_opt(config_opt_t *opt)
 {
-    size_t i;
+	size_t i;
 
-    if (opt->is_array) {
+	if (opt->is_array) {
 		for (i = 0; i < opt->size; i++)
 			free(opt->values[i]);
 		free(opt->values);
-    } else {
+	} else {
 		free(opt->value);
 	}
 
-    free(opt->name);
-    free(opt);
+	free(opt->name);
+	free(opt);
 }
 
 void config_free(void)
@@ -280,43 +276,43 @@ void config_free(void)
 	}
 }
 
-static int explode(const char *src, const char *tokens, char ***list, size_t * len)
+static int explode(const char *src, const char *tokens, char ***list, size_t *len)
 {
-    char *str, *copy, **_list = NULL;
+	char *str, *copy, **_list = NULL;
 
-    if (src == NULL || list == NULL || len == NULL)
+	if (src == NULL || list == NULL || len == NULL)
 		return 0;
 
-    *list = NULL;
-    *len = 0;
+	*list = NULL;
+	*len = 0;
 
-    copy = strdup(src);
+	copy = strdup(src);
 
-    str = strtok(copy, tokens);
+	str = strtok(copy, tokens);
 
-    if (str == NULL) {
+	if (str == NULL) {
 		free(copy);
 		return 0;
-    }
+	}
 
-    if ((_list = malloc(sizeof(*_list))) == NULL)
+	if ((_list = malloc(sizeof(*_list))) == NULL)
 		exit(EXIT_FAILURE);
 
-    _list[*len] = strdup(str);
+	_list[*len] = strdup(str);
 
-    (*len)++;
+	(*len)++;
 
-    while ((str = strtok(NULL, tokens)) != NULL) {
+	while ((str = strtok(NULL, tokens)) != NULL) {
 		if ((_list = realloc(_list, (*len + 1) * sizeof(*_list))) == NULL)
 			exit(EXIT_FAILURE);
 
 		_list[*len] = strdup(str);
 
 		(*len)++;
-    }
+	}
 
-    *list = _list;
-    free(copy);
+	*list = _list;
+	free(copy);
 
-    return -1;
+	return -1;
 }
