@@ -1,5 +1,5 @@
 /* 
- * config_read.c
+ * config.c
  *
  * Copyright (c) 2012 "config" Niels Vanden Eynde 
  * 
@@ -29,9 +29,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 #include "debug.h"
-#include "config_read.h"
+#include "config.h"
 
 #define DQUOTE		'"'
 #define PAREN_OPEN	'('
@@ -75,7 +76,7 @@ config_opt_t *config_add_opt(const char *name, const char *value)
 	return opt;
 }
 
-config_opt_t *config_add_opt_array(const char *name, char **values, const size_t size)
+config_opt_t *config_add_opt_array(const char *name, char **values, size_t size)
 {
 	config_opt_t *opt;
 
@@ -115,12 +116,54 @@ char *config_get_value(const char *name)
 	return value;
 }
 
+void config_set_value(const char *name, const char *value)
+{
+	config_opt_t *opt;
+	opt = config_get_opt(name);
+	if (opt) {
+		free(opt->value);
+		opt->value = value == NULL ? NULL : strdup(value);
+	} else {
+		config_add_opt(name, value);
+	}
+
+}
+
+/*
+ * example:
+ *     value = father,mother,sisters
+ */
+void config_set_value_array(const char *name, const char *value)
+{
+	size_t i;
+	size_t len;
+	char **values;
+
+	config_opt_t *opt;
+	opt = config_get_opt(name);
+	explode(value, ",", &values, &len);
+	if (opt) {
+		for (i = 0; i < opt->size; i++)
+			free(opt->values[i]);
+		free(opt->values);
+		opt->values = values;
+		opt->size = len;
+	} else {
+		config_add_opt_array(name, values, len);
+	}
+
+}
+
 void config_set_delim(char d)
 {
 	delim = d;
 }
 
-int config_find_opt_value(char *name, char *value)
+/*
+ * @return: 1 - found value
+ *          0 - not found
+ */
+int config_find_opt_value(const char *name, const char *value)
 {
 	size_t i;
 	config_opt_t *opt;
@@ -132,13 +175,13 @@ int config_find_opt_value(char *name, char *value)
 		return 0;
 	for (i = 0; i < opt->size; i++) {
 		if (strcmp(opt->values[i], value) == 0)
-			return -1;
+			return 1;
 	}
 
 	return 0;
 }
 
-void config_print_opt(char *name)
+void config_print_opt(const char *name)
 {
 	size_t i;
 	config_opt_t *opt;
@@ -157,12 +200,12 @@ void config_print_opt(char *name)
 	fprintf(stdout, "NAME ==> %s\n", opt->name);
 
 	for (i = 0; i < opt->size; i++)
-		fprintf(stdout, "VALUE [%ld] ==> %s\n", i, opt->values[i]);
+		fprintf(stdout, "VALUE [%d] ==> %s\n", i, opt->values[i]);
 }
 
 static int parse_line(char *string)
 {
-	char value[255], name[255], c;
+	char value[256], name[256], c;
 	unsigned int have_name, have_quote, have_paren;
 	char **values;
 	size_t i = 0, len;
@@ -173,11 +216,15 @@ static int parse_line(char *string)
 		if (c == DQUOTE) {
 			if (!have_name) {
 				ERROR("unexpected '%c'", DQUOTE);
-				return 0;
+				return -1;
 			}
-			if (have_quote && !END_LINE(*string)) {
+			if (have_quote && !END_LINE(*string) && !have_paren) {
 				ERROR("unexpected '%c' after '%c'", *string, DQUOTE);
-				return 0;
+				return -1;
+			}
+			if (have_quote && have_paren && *string != ',' && *string != PAREN_CLOSE) {
+				ERROR("unexpected '%c' after '%c'", *string, DQUOTE);
+				return -1;
 			}
 			have_quote = !have_quote;
 		} else if (c == ' ') {
@@ -187,7 +234,7 @@ static int parse_line(char *string)
 		} else if (c == delim) {
 			if (have_name) {
 				ERROR("unexpected '%c'", delim);
-				return 0;
+				return -1;
 			}
 
 			have_name = 1;
@@ -198,13 +245,13 @@ static int parse_line(char *string)
 		} else if (c == PAREN_OPEN) {
 			if (!have_name) {
 				ERROR("unexpected '%c'", PAREN_OPEN);
-				return 0;
+				return -1;
 			}
 			have_paren = 1;
 		} else if (c == PAREN_CLOSE) {
 			if (have_paren && !END_LINE(*string)) {
 				ERROR("unexpected '%c' after '%c'", *string, PAREN_CLOSE);
-				return 0;
+				return -1;
 			}
 		} else {
 			if (have_name)
@@ -226,30 +273,77 @@ static int parse_line(char *string)
 		config_add_opt(name, value);
 	}
 
-	return -1;
+	return 0;
 }
 
+/*
+ * load config file
+ * @return: 0 - success;
+ *         -1 - failed
+ */
 int config_load(const char *filename)
 {
 	FILE *fp;
-	char line[255];
+	char line[1024];
 
 	if ((fp = fopen(filename, "r")) == NULL)
-		return 0;
+		return -1;
 
 	while (fgets(line, sizeof(line), fp) != NULL) {
 		/* ignore lines that start with a comment character */
 		if (*line == comment)
 			continue;
 
-		if (!parse_line(line)) {
+		if (parse_line(line) < 0) {
 			fclose(fp);
-			return 0;
+			return -1;
 		}
 	}
 
 	fclose(fp);
-	return -1;
+	return 0;
+}
+
+static int has_space(const char *str)
+{
+	int i;
+	for (i = 0; str[i] != '\0'; i++) {
+		if (isspace(str[i]))
+			return 1;
+	}
+	return 0;
+}
+
+int config_save(const char *filename)
+{
+	FILE *fp;
+	char line[1024];
+	size_t i;
+	config_opt_t *opt, *tmp;
+
+	if ((fp = fopen(filename, "w")) == NULL)
+		return -1;
+
+	HASH_ITER(hh, config_table, opt, tmp) {
+		if (opt->is_array) {
+			sprintf(line, "%s %c %c", opt->name, delim, PAREN_OPEN);
+			for (i = 0; i < opt->size; i++) {
+				if (has_space(opt->values[i]))
+					sprintf(line + strlen(line), "\"%s\",", opt->values[i]);
+				else
+					sprintf(line + strlen(line), "%s,", opt->values[i]);
+			}
+			sprintf(line + strlen(line) - 1, "%c\n", PAREN_CLOSE);
+		} else {
+			if (has_space(opt->value))
+				sprintf(line, "%s %c \"%s\"\n", opt->name, delim, opt->value);
+			else
+				sprintf(line, "%s %c %s\n", opt->name, delim, opt->value);
+		}
+		fputs(line, fp);
+	}
+	fclose(fp);
+	return 0;
 }
 
 void config_free_opt(config_opt_t *opt)
@@ -292,7 +386,7 @@ static int explode(const char *src, const char *tokens, char ***list, size_t *le
 
 	if (str == NULL) {
 		free(copy);
-		return 0;
+		return -1;
 	}
 
 	if ((_list = malloc(sizeof(*_list))) == NULL)
@@ -314,5 +408,5 @@ static int explode(const char *src, const char *tokens, char ***list, size_t *le
 	*list = _list;
 	free(copy);
 
-	return -1;
+	return 0;
 }

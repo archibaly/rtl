@@ -1,5 +1,5 @@
 /* 
- * config_read.h ~ Header file for config_read.c.
+ * config.h ~ Header file for config_read.c.
  *
  * Copyright (c) 2012 "config" Niels Vanden Eynde 
  * 
@@ -31,8 +31,8 @@
 #include "uthash.h"
 
 /* example: */
-/* name = jacky */
-/* family = (father,mother,sisters) */
+/* name = "jacky liu"*/
+/* family = (father,mother,"big sisters") */
 
 typedef struct {
 	/* name of the option */
@@ -50,10 +50,13 @@ typedef struct {
 } config_opt_t;
 
 int config_load(const char *);
+int config_save(const char *);
 config_opt_t *config_get_opt(const char *);
 void config_free(void);
-int config_find_opt_value(char *, char *);
+int config_find_opt_value(const char *, const char *);
 char *config_get_value(const char *);
-void config_print_opt(char *);
+void config_set_value(const char *, const char *);
+void config_set_value_array(const char *name, const char *value);
+void config_print_opt(const char *);
 
 #endif /* _CONFIG_READ_H_ */
