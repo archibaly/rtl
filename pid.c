@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <dirent.h>
+#include <errno.h>
 
 #include "pid.h"
 
@@ -10,10 +11,13 @@
 
 /*
  * @pname: process name
- * @pid  : array for pid
- * @size : the size of array
+ * @pid: array for pid
+ * @size: the size of array
+ * @return: -1: error occured,
+ *           0: can not found,
+ *          >0: found
  */
-int find_pid_by_name(const char* pname, pid_t *pid, int size)
+int find_pid_by_name(const char *pname, pid_t *pid, int size)
 {
 	DIR *dir;
 	struct dirent *next;
@@ -21,7 +25,7 @@ int find_pid_by_name(const char* pname, pid_t *pid, int size)
 
 	dir = opendir("/proc");
 	if (!dir) {
-		printf("Cannot open /proc");
+		printf("opendir error: %s", strerror(errno));
 		return -1;
 	}
 
@@ -54,10 +58,13 @@ int find_pid_by_name(const char* pname, pid_t *pid, int size)
 		if (strcmp(pname, name) == 0) {
 			if (i <= size - 1)
 				pid[i++] = strtol(next->d_name, NULL, 0);
-			else
-				return size;
+			else {
+				i = size;
+				break;
+			}
 		}
 	}
+	closedir(dir);
 
 	return i;
 }
