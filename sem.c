@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <unistd.h>
 #include <sys/sem.h>
 
@@ -19,7 +21,7 @@ int set_semvalue(int sem_id, int value)
 
 	sem_union.val = value;
 	if (semctl(sem_id, 0, SETVAL, sem_union) == -1) {
-		ERROR("semctl()");
+		debug("semctl error: %s", strerror(errno));
 		return -1;
 	}
 
@@ -33,7 +35,7 @@ int del_semvalue(int sem_id)
 	union semun sem_union;
 
 	if (semctl(sem_id, 0, IPC_RMID, sem_union) == -1) {
-		ERROR("semctl()");
+		debug("semctl error: %s", strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -48,7 +50,7 @@ int sem_p(int sem_id)
 	sem_b.sem_flg = SEM_UNDO;
 
 	if (semop(sem_id, &sem_b, 1) == -1) {
-		ERROR("semop()");
+		debug("semop error: %s", strerror(errno));
 		return -1;
 	}
 
@@ -65,7 +67,7 @@ int sem_v(int sem_id)
 	sem_b.sem_flg = SEM_UNDO;
 
 	if (semop(sem_id, &sem_b, 1) == -1) {
-		ERROR("semop()");
+		debug("semop error: %s", strerror(errno));
 		return -1;
 	}
 

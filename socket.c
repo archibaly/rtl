@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
@@ -10,8 +11,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include "socket.h"
 #include "debug.h"
+#include "socket.h"
 
 void socket_set_non_blocking(int sockfd)
 {
@@ -19,13 +20,21 @@ void socket_set_non_blocking(int sockfd)
 
 	flags = fcntl(sockfd, F_GETFL, 0);
 	if (flags == -1) {
-		ERROR("fcntl()");
+		/*
+		 * if we cannot get sockfd flags then there's something very wrong
+		 * with the system, so we abort the application
+		 */
+		debug("fcntl error: %s", strerror(errno));
 		abort();
 	}
 
 	flags |= O_NONBLOCK;
 	if (fcntl(sockfd, F_SETFL, flags) == -1) {
-		ERROR("fcntl()");
+		/*
+		 * if we cannot set sockfd flags then there's something very wrong
+		 * with the system, so we abort the application
+		 */
+		debug("fcntl error: %s", strerror(errno));
 		abort();
 	}
 }
@@ -38,7 +47,7 @@ static void socket_reuse_endpoint(int sockfd)
 		 * if we cannot set an option then there's something very wrong
 		 * with the system, so we abort the application
 		 */
-		ERROR("setsockopt()");
+		debug("setsockopt error: %s", strerror(errno));
 		abort();
 	}
 }
@@ -53,14 +62,14 @@ int socket_create(int type)
 	signal(SIGPIPE, SIG_IGN);
 
 	if ((sockfd = socket(AF_INET, type, 0)) < 0) {
-		ERROR("socket()");
+		debug("socket error: %s", strerror(errno));
 		abort();
 	}
 	socket_reuse_endpoint(sockfd);
 	return sockfd;
 }
 
-void socket_bind(int sockfd, unsigned short port)
+void socket_bind(int sockfd, int port)
 {
 	struct sockaddr_in server_addr;
 
@@ -69,7 +78,7 @@ void socket_bind(int sockfd, unsigned short port)
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	server_addr.sin_port = htons(port);
 	if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-		ERROR("bind()");
+		debug("bind error: %s", strerror(errno));
 		abort();
 	}
 }
@@ -77,7 +86,7 @@ void socket_bind(int sockfd, unsigned short port)
 void socket_start_listening(int sockfd)
 {
 	if (listen(sockfd, SOMAXCONN) == -1) {
-		ERROR("listen()");
+		debug("listen error: %s", strerror(errno));
 		abort();
 	}
 }
@@ -101,11 +110,24 @@ static int get_ip(const char *hostname, char *ip)
 	return 0;
 }
 
+static int host_is_ipv4(const char *str)
+{
+	if (str == NULL)
+		return 0;
+	while (*str) {
+		if (isdigit(*str) || *str == '.')
+			str++;
+		else
+			return 0;
+	}
+	return 1;
+}
+
 /**
  * socket_connect - connect to tcp server
  * @host: hostname or ip of the server
  */
-int socket_connect(const char *host, uint16_t port)
+int socket_connect(const char *host, int port)
 {
 	char ip[INET_ADDRSTRLEN];
 	int sockfd;
@@ -125,16 +147,19 @@ int socket_connect(const char *host, uint16_t port)
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(port);
 	if (inet_pton(AF_INET, ip, &server_addr.sin_addr) < 0) {
+		debug("inet_pton error: %s", strerror(errno));
 		return -1;
 	}
 
-	if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+	if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+		debug("connect error: %s", strerror(errno));
 		return -1;
+	}
 
 	return sockfd;
 }
 
-void tcp_server_init(uint16_t port)
+void tcp_server_init(int port)
 {
 	int sockfd;
 

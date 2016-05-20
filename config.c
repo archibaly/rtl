@@ -214,15 +214,15 @@ static int parse_line(char *string)
 	while ((c = *string++) != '\0') {
 		if (c == DQUOTE) {
 			if (!have_name) {
-				ERROR("unexpected '%c'", DQUOTE);
+				debug("unexpected '%c'", DQUOTE);
 				return -1;
 			}
 			if (have_quote && !END_LINE(*string) && !have_paren) {
-				ERROR("unexpected '%c' after '%c'", *string, DQUOTE);
+				debug("unexpected '%c' after '%c'", *string, DQUOTE);
 				return -1;
 			}
 			if (have_quote && have_paren && *string != ',' && *string != PAREN_CLOSE) {
-				ERROR("unexpected '%c' after '%c'", *string, DQUOTE);
+				debug("unexpected '%c' after '%c'", *string, DQUOTE);
 				return -1;
 			}
 			have_quote = !have_quote;
@@ -232,7 +232,7 @@ static int parse_line(char *string)
 				value[i++] = c;
 		} else if (c == delim) {
 			if (have_name) {
-				ERROR("unexpected '%c'", delim);
+				debug("unexpected '%c'", delim);
 				return -1;
 			}
 
@@ -243,13 +243,13 @@ static int parse_line(char *string)
 			break;
 		} else if (c == PAREN_OPEN) {
 			if (!have_name) {
-				ERROR("unexpected '%c'", PAREN_OPEN);
+				debug("unexpected '%c'", PAREN_OPEN);
 				return -1;
 			}
 			have_paren = 1;
 		} else if (c == PAREN_CLOSE) {
 			if (have_paren && !END_LINE(*string)) {
-				ERROR("unexpected '%c' after '%c'", *string, PAREN_CLOSE);
+				debug("unexpected '%c' after '%c'", *string, PAREN_CLOSE);
 				return -1;
 			}
 		} else {
@@ -374,33 +374,17 @@ static int explode(const char *src, const char *tokens, char ***list, size_t *le
 	char *str, *copy, **_list = NULL;
 
 	if (src == NULL || list == NULL || len == NULL)
-		return 0;
+		return -1;
 
 	*list = NULL;
 	*len = 0;
 
 	copy = strdup(src);
 
-	str = strtok(copy, tokens);
-
-	if (str == NULL) {
-		free(copy);
-		return -1;
-	}
-
-	if ((_list = malloc(sizeof(*_list))) == NULL)
-		exit(EXIT_FAILURE);
-
-	_list[*len] = strdup(str);
-
-	(*len)++;
-
-	while ((str = strtok(NULL, tokens)) != NULL) {
+	while ((str = strsep(&copy, tokens)) != NULL) {
 		if ((_list = realloc(_list, (*len + 1) * sizeof(*_list))) == NULL)
 			exit(EXIT_FAILURE);
-
 		_list[*len] = strdup(str);
-
 		(*len)++;
 	}
 

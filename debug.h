@@ -5,14 +5,11 @@
 
 #include <stdio.h>
 
-#define INFO(fmt, ...) fprintf(stdout, "%s(%d): " fmt "\n", __FILE__, __LINE__, ## __VA_ARGS__)
-#define ERROR(fmt, ...) fprintf(stderr, "%s(%d): " fmt "\n", __FILE__, __LINE__, ## __VA_ARGS__)
-
+#define debug(fmt, ...) fprintf(stderr, "%s(%d): " fmt "\n", __FILE__, __LINE__, ## __VA_ARGS__)
 
 #else
 
-#define INFO(...)
-#define ERROR(...)
+#define debug(fmt, ...)
 
 #endif
 

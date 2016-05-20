@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <unistd.h>
 #include <net/if.h>
 #include <sys/types.h>
@@ -11,40 +12,39 @@
 #include "inet.h"
 #include "debug.h"
 
-int mac_format_valid(char *possiblemac)
+int mac_format_valid(char *mac)
 {
 	char hex2[3];
-	return sscanf(possiblemac,
+	return sscanf(mac,
 				  "%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]",
 				  hex2, hex2, hex2, hex2, hex2, hex2) == 6;
 }
 
-int ip_format_valid(char *possibleip)
+int ip_format_valid(char *ip)
 {
 	char hex3[4];
-	return sscanf(possibleip,
+	return sscanf(ip,
 				  "%3[0-9].%3[0-9].%3[0-9].%3[0-9]",
 				  hex3, hex3, hex3, hex3) == 4;
 }
 
-int get_mac(char *mac, const char *type)
+int get_mac(char *mac, size_t size, const char *ifname)
 {
-	if (NULL == mac)
-		return -1;
+	int sock;
 	struct ifreq _ifreq;
-	int sock = 0;
 
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		ERROR("socket()");
+		debug("socket error: %s", strerror(errno));
 		return -1;
 	}
-	strcpy(_ifreq.ifr_name, type);
+	strlcpy(_ifreq.ifr_name, ifname, sizeof(_ifreq.ifr_name));
 	if(ioctl(sock, SIOCGIFHWADDR, &_ifreq) < 0) {
-		ERROR("ioctl()");
+		debug("ioctl error: %s", strerror(errno));
+		close(sock);
 		return -1;
 	}
 
-	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X",
+	snprintf(mac, size, "%02X:%02X:%02X:%02X:%02X:%02X",
 			(unsigned char)_ifreq.ifr_hwaddr.sa_data[0], (unsigned char)_ifreq.ifr_hwaddr.sa_data[1],
 			(unsigned char)_ifreq.ifr_hwaddr.sa_data[2], (unsigned char)_ifreq.ifr_hwaddr.sa_data[3],
 			(unsigned char)_ifreq.ifr_hwaddr.sa_data[4], (unsigned char)_ifreq.ifr_hwaddr.sa_data[5]);
@@ -54,21 +54,23 @@ int get_mac(char *mac, const char *type)
 	return 0;
 }
 
-int get_ip(char *ip, const char *type)
+int get_ip(char *ip, size_t size, const char *ifname)
 {
 	int sock;
-	struct ifreq ifr;
-	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		ERROR("socket()");
+	struct ifreq _ifreq;
+
+	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		debug("socket error: %s", strerror(errno));
+		return -1;
+	}
+	strlcpy(_ifreq.ifr_name, ifname, sizeof(_ifreq.ifr_name));
+	if (ioctl(sock, SIOCGIFADDR, &_ifreq) < 0) {
+		debug("ioctl error: %s", strerror(errno));
+		close(sock);
 		return -1;
 	}
 
-	strcpy(ifr.ifr_name, type);
-	if (ioctl(sock, SIOCGIFADDR, &ifr) <  0) {
-		ERROR("ioctl()");
-		return -1;
-	}
-	sprintf(ip, "%s", inet_ntoa(((struct sockaddr_in*)&(ifr.ifr_addr))->sin_addr));
+	strlcpy(ip, inet_ntoa(((struct sockaddr_in*)&(_ifreq.ifr_addr))->sin_addr), size);
 
 	close(sock);
 
