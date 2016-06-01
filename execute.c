@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -21,11 +20,13 @@ int execute(const char *cmd)
 	int status;
 	int rc = waitpid(pid, &status, 0);
 
-	if (-1 == rc)
+	if (rc == -1)
 		return -1; /* waitpid failed */
 
 	if (WIFEXITED(status)) {
-		return WEXITSTATUS(status);
+		if (WEXITSTATUS(status) != 0)
+			return -1;
+		return 0;
 	} else {
 		/* if we get here, child did not exit cleanly */
 		return -1;

@@ -4,13 +4,14 @@
 struct time {
 	int year;
 	int mon;
-	int day;
+	int mday;
+	int wday;
 	int hour;
 	int min;
 	int sec;
 };
 
-void time_get(struct time *t);
-void time_fmt(const struct time *time, char *fmt, int size);
+int time_get(struct time *t);
+void time_fmt(const struct time *time, char *fmt, size_t size);
 
 #endif /* _TIME_H_ */

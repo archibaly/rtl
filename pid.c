@@ -6,6 +6,7 @@
 #include <errno.h>
 
 #include "pid.h"
+#include "debug.h"
 
 #define READ_BUF_SIZE	512
 
@@ -13,11 +14,10 @@
  * @pname: process name
  * @pid: array for pid
  * @size: the size of array
- * @return: -1: error occured,
- *           0: can not found,
- *          >0: found
+ * @return: 0: can not found,
+ *         >0: found
  */
-int find_pid_by_name(const char *pname, pid_t *pid, int size)
+int find_pid_by_name(const char *pname, pid_t *pid, size_t size)
 {
 	DIR *dir;
 	struct dirent *next;
@@ -25,8 +25,8 @@ int find_pid_by_name(const char *pname, pid_t *pid, int size)
 
 	dir = opendir("/proc");
 	if (!dir) {
-		printf("opendir error: %s", strerror(errno));
-		return -1;
+		ERROR("opendir error: %s", strerror(errno));
+		return 0;
 	}
 
 	while ((next = readdir(dir)) != NULL) {
@@ -56,12 +56,10 @@ int find_pid_by_name(const char *pname, pid_t *pid, int size)
 		/* buffer should contain a string like "Name:   binary_name" */
 		sscanf(buffer, "%*s %s", name);
 		if (strcmp(pname, name) == 0) {
-			if (i <= size - 1)
+			if (i < size)
 				pid[i++] = strtol(next->d_name, NULL, 0);
-			else {
-				i = size;
+			else
 				break;
-			}
 		}
 	}
 	closedir(dir);
