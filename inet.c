@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
@@ -12,7 +14,7 @@
 #include "inet.h"
 #include "debug.h"
 
-int mac_format_valid(char *mac)
+int mac_fmt_valid(char *mac)
 {
 	char hex2[3];
 	return sscanf(mac,
@@ -20,7 +22,7 @@ int mac_format_valid(char *mac)
 				  hex2, hex2, hex2, hex2, hex2, hex2) == 6;
 }
 
-int ip_format_valid(char *ip)
+int ip_fmt_valid(char *ip)
 {
 	char hex3[4];
 	return sscanf(ip,
@@ -74,5 +76,46 @@ int get_ip(char *ip, size_t size, const char *ifname)
 
 	close(sock);
 
+	return 0;
+}
+
+static int strtohex(const char *str, uint8_t *result)
+{
+	int i;
+	int len = strlen(str);
+	*result = 0;
+
+	for (i = 0; i < len; i++) {
+		if (isdigit(str[i])) {
+			*result |= ((str[i] - '0') << ((len - i - 1) << 2));
+		} else if (str[i] >= 'a' && str[i] <= 'f') {
+			*result |= ((str[i] - 'a' + 10) << ((len - i - 1) << 2));
+		} else if (str[i] >= 'A' && str[i] <= 'F') {
+			*result |= ((str[i] - 'A' + 10) << ((len - i - 1) << 2));
+		} else {
+			return -1;
+		}
+	}
+	return 0;
+}
+
+/* "xx:xx:xx:xx:xx:xx" -> {xx, xx, xx, xx, xx, xx} */
+int mac_str_to_hex(const char *str, uint8_t *mac, size_t size)
+{
+	char *copy;
+
+	if (!(copy = strdup(str)))
+		return -1;
+
+	char *p;
+	size_t i;
+	for (i = 0; i < size; i++) {
+		if ((p = strsep(&copy, ":")) != NULL)
+			strtohex(p, mac + i);
+		else
+			break;
+	}
+
+	free(copy);
 	return 0;
 }

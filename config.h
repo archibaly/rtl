@@ -10,7 +10,7 @@
 typedef struct {
 	/* name of the option */
 	char *name;
-	/* value of the option, NULL if this opt is an array */
+	/* value of the option */
 	char *value;
 	/* make this structure hashable */
 	ut_hash_handle hh;

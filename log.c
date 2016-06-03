@@ -69,6 +69,7 @@ static void log_max_size_check(void)
 	fseek(log.fp, 0, SEEK_END);
 	if (ftell(log.fp) > log.max_size) {
 		unlink(log.name);	/* just delete it */
+		log_close();
 		log_open(log.name);
 	}
 }
@@ -95,7 +96,7 @@ void log_write(log_level_t level, const char *fmt, ...)
 
 	struct time t;
 	char time[32];
-	time_get($t);
+	time_get(&t);
 	time_fmt(&t, time, sizeof(time));
 	sprintf(log_buf + pos, "[%s] ", time);
 	pos = strlen(log_buf);

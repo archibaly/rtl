@@ -25,7 +25,7 @@ int time_get(struct time *t)
 	return 0;
 }
 
-void time_fmt(const struct time *t, char *fmt, size_t size)
+void time_fmt(const struct time *t, char *fmt, int size)
 {
 	snprintf(fmt, size - 1, "%04d/%02d/%02d %02d:%02d:%02d",
 			 t->year, t->mon, t->mday, t->hour, t->min, t->sec);

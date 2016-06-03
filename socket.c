@@ -141,18 +141,21 @@ int socket_connect(const char *host, int port)
 		}
 	}
 
-	sockfd = socket_create(TCP);
+	if ((sockfd = socket_create(TCP)) < 0)
+		return -1;
 
 	memset(&server_addr, 0, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(port);
 	if (inet_pton(AF_INET, ip, &server_addr.sin_addr) < 0) {
 		debug("inet_pton error: %s", strerror(errno));
+		close(sockfd);
 		return -1;
 	}
 
 	if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
 		debug("connect error: %s", strerror(errno));
+		close(sockfd);
 		return -1;
 	}
 
