@@ -10,6 +10,7 @@
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <linux/wireless.h>
 
 #include "inet.h"
 #include "debug.h"
@@ -35,7 +36,7 @@ int get_mac(char *mac, size_t size, const char *ifname)
 	int sock;
 	struct ifreq _ifreq;
 
-	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		debug("socket error: %s", strerror(errno));
 		return -1;
 	}
@@ -61,7 +62,7 @@ int get_ip(char *ip, size_t size, const char *ifname)
 	int sock;
 	struct ifreq _ifreq;
 
-	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		debug("socket error: %s", strerror(errno));
 		return -1;
 	}
@@ -73,6 +74,33 @@ int get_ip(char *ip, size_t size, const char *ifname)
 	}
 
 	strlcpy(ip, inet_ntoa(((struct sockaddr_in*)&(_ifreq.ifr_addr))->sin_addr), size);
+
+	close(sock);
+
+	return 0;
+}
+
+int get_ssid(char *ssid, size_t size, const char *ifname)
+{
+	int sock;
+	struct iwreq iw; 
+
+	sock = socket(AF_INET, SOCK_DGRAM, 0); 
+
+	if (sock < 0) {
+		debug("socket error: %s", strerror(errno));
+		return -1; 
+	}   
+
+	iw.u.essid.pointer = ssid;
+	iw.u.essid.length = size;
+
+	strncpy(iw.ifr_name, ifname, IFNAMSIZ);
+	if (ioctl(sock, SIOCGIWESSID, &iw) < 0) {
+		debug("ioctl error: %s", strerror(errno));
+		close(sock);
+		return -1;
+	}
 
 	close(sock);
 
