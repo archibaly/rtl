@@ -115,6 +115,7 @@ void log_write(log_level_t level, const char *fmt, ...)
 
 	fputs(log_buf, log.fp);
 	fflush(log.fp);
+	fsync(log.fd);	/* write to disk immediately */
 
 	unlock(log.fd);
 }
