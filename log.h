@@ -1,12 +1,11 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
-#include <stdio.h>
-
 typedef enum {
-	LOG_LEVEL_INFO = 1,
-	LOG_LEVEL_WARN = 2,
-	LOG_LEVEL_ERRO = 3
+	LOG_ERRO = 1,
+	LOG_WARN = 2,
+	LOG_INFO = 3,
+	LOG_DEBG = 4
 } log_level_t;
 
 int log_open(const char *filename);

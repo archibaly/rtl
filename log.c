@@ -18,16 +18,14 @@ struct log {
 	log_level_t level;
 };
 
-static struct log log = {NULL, -1, "", LOG_MAX_FILE_SIZE, LOG_LEVEL_INFO};
+static struct log log = {NULL, -1, "", LOG_MAX_FILE_SIZE, LOG_DEBG};
 
 int log_open(const char *filename)
 {
-	if ((log.fp = fopen(filename, "a")) == NULL)
+	if (!(log.fp = fopen(filename, "a")))
 		return -1;
 	log.fd = fileno(log.fp);
-	strcpy(log.name, filename);
-	log.max_size = LOG_MAX_FILE_SIZE;
-	log.level = LOG_LEVEL_INFO;
+	strncpy(log.name, filename, sizeof(log.name));
 	return 0;
 }
 
@@ -46,17 +44,21 @@ static int log_level_string(log_level_t log_level, char *buf)
 	int pos = 0;
 
 	switch (log_level) {
-	case LOG_LEVEL_INFO:
-		strcpy(buf, "[INFO] ");
-		pos = strlen("[INFO] ");
+	case LOG_ERRO:
+		strcpy(buf, "[ERRO]");
+		pos = strlen("[ERRO]");
 		break;
-	case LOG_LEVEL_WARN:
-		strcpy(buf, "[WARN] ");
-		pos = strlen("[WARN] ");
+	case LOG_WARN:
+		strcpy(buf, "[WARN]");
+		pos = strlen("[WARN]");
 		break;
-	case LOG_LEVEL_ERRO:
-		strcpy(buf, "[ERRO] ");
-		pos = strlen("[ERRO] ");
+	case LOG_INFO:
+		strcpy(buf, "[INFO]");
+		pos = strlen("[INFO]");
+		break;
+	case LOG_DEBG:
+		strcpy(buf, "[DEBG]");
+		pos = strlen("[DEBG]");
 		break;
 	default:
 		break;
@@ -75,9 +77,9 @@ static void log_max_size_check(void)
 }
 
 /*
- * format: [LOG_LEVEL] [time] message
+ * format: [LOG_LEVEL][time] message
  * example:
- *     [ERRO] [2015/03/25 14:58:03] some serious problem happened
+ *     [ERRO][2015/03/25 14:58:03] some serious problem happened
  */
 void log_write(log_level_t level, const char *fmt, ...)
 {
@@ -85,8 +87,12 @@ void log_write(log_level_t level, const char *fmt, ...)
 	va_list args;
 	char log_buf[1024];
 
-	if (level < log.level && !log.fp)
+	if (level > log.level || !log.fp)
 		return;
+
+	if (access(log.name, 0) < 0)
+		if (log_open(log.name) < 0)
+			return;
 
 	log_max_size_check();
 
@@ -115,6 +121,8 @@ void log_write(log_level_t level, const char *fmt, ...)
 
 void log_close(void)
 {
-	fclose(log.fp);
-	log.fp = NULL;
+	if (log.fp) {
+		fclose(log.fp);
+		log.fp = NULL;
+	}
 }
