@@ -100,11 +100,9 @@ void log_write(log_level_t level, const char *fmt, ...)
 
 	writew_lock(log.fd);
 
-	struct time t;
-	char time[32];
-	time_get(&t);
-	time_fmt(&t, time, sizeof(time));
-	sprintf(log_buf + pos, "[%s] ", time);
+	char now[32];
+	time_fmt(now, sizeof(now), "%Y/%m/%d %H:%M:%S");
+	sprintf(log_buf + pos, "[%s] ", now);
 	pos = strlen(log_buf);
 
 	va_start(args, fmt);
