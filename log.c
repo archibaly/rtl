@@ -5,27 +5,25 @@
 
 #include "log.h"
 #include "time.h"
-#include "lock.h"
 
 #define LOG_MAX_NAME_SIZE	64
 #define LOG_MAX_FILE_SIZE	(1024 * 1024)	/* 1MB */
 
 struct log {
 	FILE *fp;
-	int fd;
 	char name[LOG_MAX_NAME_SIZE];
 	int max_size;
 	log_level_t level;
 };
 
-static struct log log = {NULL, -1, "", LOG_MAX_FILE_SIZE, LOG_DEBG};
+static struct log log = {NULL, "", LOG_MAX_FILE_SIZE, LOG_DEBG};
 
 int log_open(const char *filename)
 {
 	if (!(log.fp = fopen(filename, "a")))
 		return -1;
-	log.fd = fileno(log.fp);
-	strncpy(log.name, filename, sizeof(log.name));
+	strncpy(log.name, filename, sizeof(log.name) - 1);
+	log.name[sizeof(log.name) - 1] = '\0';
 	return 0;
 }
 
@@ -98,8 +96,6 @@ void log_write(log_level_t level, const char *fmt, ...)
 
 	pos = log_level_string(level, log_buf);
 
-	writew_lock(log.fd);
-
 	char now[32];
 	time_fmt(now, sizeof(now), "%Y/%m/%d %H:%M:%S");
 	sprintf(log_buf + pos, "[%s] ", now);
@@ -110,12 +106,7 @@ void log_write(log_level_t level, const char *fmt, ...)
 	va_end(args);
 	
 	strcat(log_buf, "\n");
-
 	fputs(log_buf, log.fp);
-	fflush(log.fp);
-	fsync(log.fd);	/* write to disk immediately */
-
-	unlock(log.fd);
 }
 
 void log_close(void)

@@ -95,7 +95,8 @@ int get_ssid(char *ssid, size_t size, const char *ifname)
 	iw.u.essid.pointer = ssid;
 	iw.u.essid.length = size;
 
-	strncpy(iw.ifr_name, ifname, IFNAMSIZ);
+	strncpy(iw.ifr_name, ifname, IFNAMSIZ - 1);
+	iw.ifr_name[IFNAMSIZ - 1] = '\0';
 	if (ioctl(sock, SIOCGIWESSID, &iw) < 0) {
 		debug("ioctl error: %s", strerror(errno));
 		close(sock);

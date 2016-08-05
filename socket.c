@@ -14,41 +14,29 @@
 #include "debug.h"
 #include "socket.h"
 
-void socket_set_non_blocking(int sockfd)
+int socket_set_non_blocking(int sockfd)
 {
 	int flags;
 
 	flags = fcntl(sockfd, F_GETFL, 0);
 	if (flags == -1) {
-		/*
-		 * if we cannot get sockfd flags then there's something very wrong
-		 * with the system, so we abort the application
-		 */
 		debug("fcntl error: %s", strerror(errno));
-		abort();
+		return -1;
 	}
 
 	flags |= O_NONBLOCK;
 	if (fcntl(sockfd, F_SETFL, flags) == -1) {
-		/*
-		 * if we cannot set sockfd flags then there's something very wrong
-		 * with the system, so we abort the application
-		 */
 		debug("fcntl error: %s", strerror(errno));
-		abort();
+		return -1;
 	}
 }
 
-static void socket_reuse_endpoint(int sockfd)
+static int socket_reuse_endpoint(int sockfd)
 {
 	int reuse = 1;
 	if ((setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))) < 0) {
-		/*
-		 * if we cannot set an option then there's something very wrong
-		 * with the system, so we abort the application
-		 */
 		debug("setsockopt error: %s", strerror(errno));
-		abort();
+		return -1;
 	}
 }
 
@@ -63,13 +51,16 @@ int socket_create(int type)
 
 	if ((sockfd = socket(AF_INET, type, 0)) < 0) {
 		debug("socket error: %s", strerror(errno));
-		abort();
+		return -1;
 	}
-	socket_reuse_endpoint(sockfd);
+
+	if (socket_reuse_endpoint(sockfd) < 0 )
+		return -1;
+
 	return sockfd;
 }
 
-void socket_bind(int sockfd, int port)
+int socket_bind(int sockfd, int port)
 {
 	struct sockaddr_in server_addr;
 
@@ -79,15 +70,15 @@ void socket_bind(int sockfd, int port)
 	server_addr.sin_port = htons(port);
 	if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
 		debug("bind error: %s", strerror(errno));
-		abort();
+		return -1;
 	}
 }
 
-void socket_start_listening(int sockfd)
+int socket_start_listening(int sockfd)
 {
 	if (listen(sockfd, SOMAXCONN) == -1) {
 		debug("listen error: %s", strerror(errno));
-		abort();
+		return -1;
 	}
 }
 
@@ -162,13 +153,17 @@ int socket_connect(const char *host, int port)
 	return sockfd;
 }
 
-void tcp_server_init(int port)
+int tcp_server_init(int port)
 {
 	int sockfd;
 
 	sockfd = socket_create(TCP);
-	socket_bind(sockfd, port);
-	socket_start_listening(sockfd);
+	if (sockfd < 0)
+		return -1;
+	if (socket_bind(sockfd, port) < 0)
+		return -1;
+	if (socket_start_listening(sockfd) < 0)
+		return -1;
 }
 
 int socket_recv(int sockfd, void *buff, int size)
