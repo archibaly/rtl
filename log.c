@@ -107,6 +107,7 @@ void log_write(log_level_t level, const char *fmt, ...)
 	
 	strcat(log_buf, "\n");
 	fputs(log_buf, log.fp);
+	fflush(log.fp);
 }
 
 void log_close(void)
