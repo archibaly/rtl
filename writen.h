@@ -1,7 +1,7 @@
 #ifndef _WRITEN_H_
 #define _WRITEN_H_
 
-#include <stdlib.h>
+#include <unistd.h>
 
 ssize_t writen(int fd, const void *vptr, size_t n);
 
