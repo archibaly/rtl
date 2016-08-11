@@ -29,6 +29,8 @@ int socket_set_non_blocking(int sockfd)
 		debug("fcntl error: %s", strerror(errno));
 		return -1;
 	}
+
+	return 0;
 }
 
 static int socket_reuse_endpoint(int sockfd)
@@ -38,6 +40,7 @@ static int socket_reuse_endpoint(int sockfd)
 		debug("setsockopt error: %s", strerror(errno));
 		return -1;
 	}
+	return 0;
 }
 
 int socket_create(int type)
@@ -72,6 +75,7 @@ int socket_bind(int sockfd, int port)
 		debug("bind error: %s", strerror(errno));
 		return -1;
 	}
+	return 0;
 }
 
 int socket_start_listening(int sockfd)
@@ -80,6 +84,7 @@ int socket_start_listening(int sockfd)
 		debug("listen error: %s", strerror(errno));
 		return -1;
 	}
+	return 0;
 }
 
 /**
@@ -164,24 +169,30 @@ int tcp_server_init(int port)
 		return -1;
 	if (socket_start_listening(sockfd) < 0)
 		return -1;
+	return 0;
 }
 
 int socket_recv(int sockfd, void *buff, int size)
 {
-	int n = 0;
+	int nleft;
+	int nrecv;
+	char *ptr;
 
-	for (;;) {
-		if ((n = recv(sockfd, buff, size, 0)) < 0) {
-			if (errno == EINTR)
-				continue;
-			else
-				return -1;		/* error */
+	ptr = buff;
+	nleft = size;
+
+	while (nleft > 0) {
+		if ((nrecv = recv(sockfd, ptr, nleft, 0)) < 0) {
+			return -1;		/* error */
 		} else {
 			break;
 		}
+
+		nleft -= nrecv;
+		ptr   += nrecv;
 	}
 
-	return n;
+	return size - nleft;
 }
 
 int socket_send(int sockfd, const void *buff, int size)
@@ -195,10 +206,7 @@ int socket_send(int sockfd, const void *buff, int size)
 
 	while (nleft > 0) {
 		if ((nsent = send(sockfd, ptr, nleft, 0)) < 0) {
-			if (errno == EINTR)
-				continue;
-			else
-				return -1;		/* error */
+			return -1;
 		} else if (nsent == 0) {
 			break;
 		}

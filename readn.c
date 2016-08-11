@@ -11,10 +11,7 @@ ssize_t readn(int fd, void *ptr, size_t n)
 	nleft = n;
 	while (nleft > 0) {
 		if ((nread = read(fd, ptr, nleft)) < 0) {
-			if (nleft == n)
-				return -1;	/* error, return -1 */
-			else
-				break;		/* error, return amount read so far */
+			return -1;
 		} else if (nread == 0) {
 			break;			/* EOF */
 		}
