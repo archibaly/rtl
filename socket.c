@@ -168,18 +168,22 @@ int tcp_server_init(int port)
 
 int socket_recv(int sockfd, void *buff, int size)
 {
-	int n;
+	int n = 0;
 
 	for (;;) {
 		if ((n = recv(sockfd, buff, size, 0)) < 0) {
 			if (errno == EINTR)
 				continue;
+			else if (errno == EAGAIN)
+				return 0;
 			else
 				return -1;
 		} else {
-			return n;
+			break;
 		}
 	}
+
+	return n;
 }
 
 int socket_send(int sockfd, const void *buff, int size)
@@ -192,15 +196,20 @@ int socket_send(int sockfd, const void *buff, int size)
 	nleft = size;
 
 	while (nleft > 0) {
-		if ((nsent = send(sockfd, ptr, nleft, 0)) <= 0) {
-			if (nsent < 0 && errno == EINTR)
-				nsent = 0;		/* and call write() again */
+		if ((nsent = send(sockfd, ptr, nleft, 0)) < 0) {
+			if (errno == EINTR)
+				continue;
+			else if (errno == EAGAIN)
+				return 0;
 			else
 				return -1;		/* error */
+		} else {
+			break;
 		}
 
 		nleft -= nsent;
 		ptr   += nsent;
 	}
-	return size;
+
+	return size - nleft;
 }
