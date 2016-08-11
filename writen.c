@@ -16,8 +16,6 @@ ssize_t writen(int fd, const void *vptr, size_t n)
 		if ((nwritten = write(fd, ptr, nleft)) < 0) {
 			if (errno == EINTR)
 				continue;
-			else if (errno == EAGAIN)
-				break;
 			else
 				return -1;
 		} else if (nwritten == 0) {	/* has written all data */
