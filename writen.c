@@ -14,7 +14,9 @@ ssize_t writen(int fd, const void *vptr, size_t n)
 
 	while (nleft > 0) {
 		if ((nwritten = write(fd, ptr, nleft)) < 0) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
+			if (errno == EINTR)
+				continue;
+			else if (errno == EAGAIN)
 				break;
 			else
 				return -1;

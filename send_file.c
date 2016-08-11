@@ -26,7 +26,7 @@ int send_file(const char *pathname, int out_fd)
 
 	while (nleft > 0) {
 		if ((nwritten = sendfile(out_fd, fd, NULL, nleft)) < 0) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+			if (errno == EAGAIN) {
 				break;
 			} else {
 				close(fd);
