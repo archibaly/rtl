@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <unistd.h>
 
 #include "writen.h"
 
@@ -25,5 +26,5 @@ ssize_t writen(int fd, const void *vptr, size_t n)
 		ptr   += nwritten;
 	}
 
-	return n - left;
+	return n - nleft;
 }

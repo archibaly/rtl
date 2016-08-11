@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <errno.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -9,10 +10,16 @@
 
 int send_file(const char *pathname, int out_fd)
 {
+	int fd;
 	struct stat s;
-	int fd = open(pathname, O_RDONLY);
 
-	fstat(fd, &s);
+	if ((fd = open(pathname, O_RDONLY)) < 0)
+		return -1;
+
+	if (fstat(fd, &s) < 0) {
+		close(fd);
+		return -1;
+	}
 
 	off_t nleft = s.st_size;
 	int nwritten;
