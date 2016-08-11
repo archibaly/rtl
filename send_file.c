@@ -19,16 +19,14 @@ int send_file(const char *pathname, int out_fd)
 
 	while (nleft > 0) {
 		if ((nwritten = sendfile(out_fd, fd, NULL, nleft)) < 0) {
-			/* has sent all data */
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				break;
 			} else {
 				close(fd);
 				return -1;
 			}
-		} else if (nwritten == 0) {
-			close(fd);
-			return -1;	/* error */
+		} else if (nwritten == 0) {	/* has sent all data */
+			break;
 		}
 
 		nleft -= nwritten;
