@@ -72,9 +72,9 @@ int rtl_hash_add(rtl_hash_table *table, void *key, void *value)
 	int offset;
 	rtl_hash_node *node;
 
-	if (table->key_type == HASH_KEY_TYPE_INT) {
+	if (table->key_type == RTL_HASH_KEY_TYPE_INT) {
 		offset = hash_int(*(int *)key, log(table->size) / log(2));
-	} else if (table->key_type == HASH_KEY_TYPE_STR) {
+	} else if (table->key_type == RTL_HASH_KEY_TYPE_STR) {
 		offset = hash_str((char *)key, table->size);
 	} else {
 		return -1;
@@ -142,9 +142,9 @@ static int hash_str_find(rtl_hash_table *table, const char *key,
 int rtl_hash_find(rtl_hash_table *table, const void *key,
 			  rtl_hash_node **node, size_t size)
 {
-	if (table->key_type == HASH_KEY_TYPE_INT) {
+	if (table->key_type == RTL_HASH_KEY_TYPE_INT) {
 		return hash_int_find(table, *(int *)key, node, size);
-	} else if (table->key_type == HASH_KEY_TYPE_STR) {
+	} else if (table->key_type == RTL_HASH_KEY_TYPE_STR) {
 		return hash_str_find(table, (char *)key, node, size);
 	} else {
 		return 0;

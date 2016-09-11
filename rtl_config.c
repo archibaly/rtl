@@ -184,7 +184,7 @@ int rtl_config_load(const char *filename)
 	FILE *fp;
 	char line[1024];
 
-	if (!(config_table = rtl_hash_init(HASH_NUM_BUCKETS, HASH_KEY_TYPE_STR)))
+	if (!(config_table = rtl_hash_init(HASH_NUM_BUCKETS, RTL_HASH_KEY_TYPE_STR)))
 		return -1;
 
 	if (!(fp = fopen(filename, "r")))

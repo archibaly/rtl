@@ -13,7 +13,7 @@
 int rtl_http_build_get_header(const char *hostname, const char *path, char *header)
 {
 	const char *getpath = path;
-	char *tpl = "GET /%s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n";
+	char *tpl = "RTL_HTTP_GET /%s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n";
 
 	if (getpath[0] == '/')
 		getpath++;
@@ -31,7 +31,7 @@ int rtl_http_build_get_header(const char *hostname, const char *path, char *head
 int rtl_http_build_post_header(const char *hostname, const char *path, char *header)
 {
 	const char *postpath = path;
-	char *tpl = "POST /%s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n";
+	char *tpl = "RTL_HTTP_POST /%s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n";
 
 	if (postpath[0] == '/')
 		postpath++;
@@ -61,9 +61,9 @@ int rtl_http_send_request(int type, const char *host, uint16_t port, const char 
 	char header[1024];
 	int header_len;
 
-	if (type == GET)
+	if (type == RTL_HTTP_GET)
 		header_len = rtl_http_build_get_header(host, path, header);
-	else if (type == POST)
+	else if (type == RTL_HTTP_POST)
 		header_len = rtl_http_build_post_header(host, path, header);
 	else
 		return -1;

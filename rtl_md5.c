@@ -89,7 +89,7 @@
  * This processes one or more 64-byte data blocks, but does NOT update
  * the bit counters.  There are no alignment requirements.
  */
-static const void *body(md5_ctx *ctx, const void *data, unsigned long size)
+static const void *body(rtl_md5_ctx *ctx, const void *data, unsigned long size)
 {
 	const unsigned char *ptr;
 	uint32_t a, b, c, d;
@@ -196,7 +196,7 @@ static const void *body(md5_ctx *ctx, const void *data, unsigned long size)
 	return ptr;
 }
 
-void rtl_md5_init(md5_ctx *ctx)
+void rtl_md5_init(rtl_md5_ctx *ctx)
 {
 	ctx->a = 0x67452301;
 	ctx->b = 0xefcdab89;
@@ -207,7 +207,7 @@ void rtl_md5_init(md5_ctx *ctx)
 	ctx->hi = 0;
 }
 
-void rtl_md5_update(md5_ctx *ctx, const void *data, unsigned long size)
+void rtl_md5_update(rtl_md5_ctx *ctx, const void *data, unsigned long size)
 {
 	uint32_t saved_lo;
 	unsigned long used, available;
@@ -241,7 +241,7 @@ void rtl_md5_update(md5_ctx *ctx, const void *data, unsigned long size)
 	memcpy(ctx->buffer, data, size);
 }
 
-void rtl_md5_final(md5_ctx *ctx, unsigned char *result)
+void rtl_md5_final(rtl_md5_ctx *ctx, unsigned char *result)
 {
 	unsigned long used, available;
 
@@ -302,7 +302,7 @@ int rtl_md5_file(const char *filename, char *result, size_t size)
 	int i;
 	int len;
 	FILE *fp;
-	md5_ctx ctx;
+	rtl_md5_ctx ctx;
 	unsigned char buffer[1024];
 	unsigned char md5[16];
 
