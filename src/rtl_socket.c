@@ -20,13 +20,13 @@ int rtl_socket_set_non_blocking(int sockfd)
 
 	flags = fcntl(sockfd, F_GETFL, 0);
 	if (flags == -1) {
-		debug("fcntl error: %s", strerror(errno));
+		rtl_debug("fcntl error: %s", strerror(errno));
 		return -1;
 	}
 
 	flags |= O_NONBLOCK;
 	if (fcntl(sockfd, F_SETFL, flags) == -1) {
-		debug("fcntl error: %s", strerror(errno));
+		rtl_debug("fcntl error: %s", strerror(errno));
 		return -1;
 	}
 
@@ -37,7 +37,7 @@ static int socket_reuse_endpoint(int sockfd)
 {
 	int reuse = 1;
 	if ((setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))) < 0) {
-		debug("setsockopt error: %s", strerror(errno));
+		rtl_debug("setsockopt error: %s", strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -53,7 +53,7 @@ int rtl_socket_create(int type)
 	signal(SIGPIPE, SIG_IGN);
 
 	if ((sockfd = socket(AF_INET, type, 0)) < 0) {
-		debug("socket error: %s", strerror(errno));
+		rtl_debug("socket error: %s", strerror(errno));
 		return -1;
 	}
 
@@ -72,7 +72,7 @@ int rtl_socket_bind(int sockfd, int port)
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	server_addr.sin_port = htons(port);
 	if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-		debug("bind error: %s", strerror(errno));
+		rtl_debug("bind error: %s", strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -81,7 +81,7 @@ int rtl_socket_bind(int sockfd, int port)
 int rtl_socket_start_listening(int sockfd)
 {
 	if (listen(sockfd, SOMAXCONN) == -1) {
-		debug("listen error: %s", strerror(errno));
+		rtl_debug("listen error: %s", strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -144,13 +144,13 @@ int rtl_socket_connect(const char *host, int port)
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(port);
 	if (inet_pton(AF_INET, ip, &server_addr.sin_addr) < 0) {
-		debug("inet_pton error: %s", strerror(errno));
+		rtl_debug("inet_pton error: %s", strerror(errno));
 		close(sockfd);
 		return -1;
 	}
 
 	if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-		debug("connect error: %s", strerror(errno));
+		rtl_debug("connect error: %s", strerror(errno));
 		close(sockfd);
 		return -1;
 	}

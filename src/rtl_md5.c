@@ -292,6 +292,25 @@ void rtl_md5_final(rtl_md5_ctx *ctx, unsigned char *result)
 	memset(ctx, 0, sizeof(*ctx));
 }
 
+int rtl_md5_string(const char *str, char *result, size_t size)
+{
+	rtl_md5_ctx ctx;
+	unsigned char md5[16];
+
+	if (size < 33)  /* must >= 33 */
+		return -1; 
+
+	rtl_md5_init(&ctx);
+	rtl_md5_update(&ctx, str, strlen(str));
+	rtl_md5_final(&ctx, md5);
+
+	int i;
+	for (i = 0; i < 16; i++)
+		sprintf(result + i * 2, "%02x", md5[i]);
+
+	return 0;
+}
+
 /*
  * @filename: file name
  * @result: char array
@@ -312,12 +331,12 @@ int rtl_md5_file(const char *filename, char *result, size_t size)
 	if ((fp = fopen(filename, "rb")) == NULL)
 		return -1;
 
-	md5_init(&ctx);
+	rtl_md5_init(&ctx);
 
 	while ((len = fread(buffer, 1, 1024, fp)) > 0)
-		md5_update(&ctx, buffer, len);
+		rtl_md5_update(&ctx, buffer, len);
 
-	md5_final(&ctx, md5);
+	rtl_md5_final(&ctx, md5);
 
 	for (i = 0; i < 16; i++)
 		sprintf(result + i * 2, "%02x", md5[i]);

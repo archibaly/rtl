@@ -25,7 +25,7 @@ int rtl_wget(const char *orignal_url, const char *filename)
 
 	char buff[BUFSIZ];
 	int n = rtl_http_build_get_header(url->host, url->path, buff);
-	url_free(url);
+	rtl_url_free(url);
 
 	if (rtl_socket_send(sockfd, buff, n) < 0) {
 		rtl_debug("rtl_socket_send error: %s", strerror(errno));

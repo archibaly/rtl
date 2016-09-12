@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <string.h>
 
 #include "rtl_str.h"
@@ -40,7 +41,7 @@ char *rtl_strlower(char *str)
 	int i;
 	int len = strlen(str);
 	for (i = 0; i < len; i++)
-		if (is_upper(str[i]))
+		if (isupper(str[i]))
 			str[i] += 32;
 	str[len] = '\0';
 	return str;
@@ -51,7 +52,7 @@ char *rtl_strupper(char *str)
 	int i;
 	int len = strlen(str);
 	for (i = 0; i < len; i++)
-		if (is_lower(str[i]))
+		if (islower(str[i]))
 			str[i] -= 32;
 	str[len] = '\0';
 	return str;

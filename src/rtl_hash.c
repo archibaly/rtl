@@ -171,7 +171,7 @@ void rtl_hash_free(rtl_hash_table *table)
 
 	for (i = 0; i < table->size; i++) {
 		rtl_hash_for_each_entry(pos, table->head + i) {
-			hash_free_node(pos);
+			rtl_hash_free_node(pos);
 		}
 	}
 
