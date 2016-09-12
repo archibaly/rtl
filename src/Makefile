@@ -22,7 +22,7 @@ OBJS = rtl_cjson.o rtl_config.o rtl_crc32.o rtl_hash.o rtl_http.o rtl_https.o \
 all: $(LIB.a) $(LIB.so)
 
 $(LIB.a): $(OBJS)
-	$(AR) -crv $@ $<
+	$(AR) -crv $@ $^
 
 $(LIB.so): $(OBJS)
 	$(LD) -o $@ $^ $(LDFLAGS)
