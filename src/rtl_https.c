@@ -28,23 +28,23 @@ int https_send_request(int type, const char *host, uint16_t port, const char *pa
 	else
 		return -1;
 
-    SSL_library_init();
-    SSL_CTX *ctx = SSL_CTX_new(SSLv23_client_method());
-    if (ctx == NULL)
-        return -1;
+	SSL_library_init();
+	SSL_CTX *ctx = SSL_CTX_new(SSLv23_client_method());
+	if (ctx == NULL)
+		return -1;
 
 	SSL *ssl = SSL_new(ctx);
-    if (ssl == NULL)
+	if (ssl == NULL)
 		goto free_ssl_ctx;
 
 	int sockfd = rtl_socket_connect(host, port);
 	if (sockfd < 0)
 		goto free_ssl;
 
-    if (SSL_set_fd(ssl, sockfd) == 0)
+	if (SSL_set_fd(ssl, sockfd) == 0)
 		goto free_sockfd;
 
-    if (SSL_connect(ssl) != 1)
+	if (SSL_connect(ssl) != 1)
 		goto free_all;
 
 	int nleft = header_len;
@@ -76,23 +76,23 @@ int https_send_request(int type, const char *host, uint16_t port, const char *pa
 	return ptr - resp;
 
 free_ssl_ctx:
-    SSL_CTX_free(ctx);
+	SSL_CTX_free(ctx);
 	return -1;
 
 free_ssl:
-    SSL_CTX_free(ctx);
-    SSL_free(ssl);
+	SSL_CTX_free(ctx);
+	SSL_free(ssl);
 	return -1;
 
 free_sockfd:
-    SSL_CTX_free(ctx);
-    SSL_free(ssl);
+	SSL_CTX_free(ctx);
+	SSL_free(ssl);
 	close(sockfd);
 	return -1;
 
 free_all:
-    SSL_CTX_free(ctx);
-    SSL_free(ssl);
+	SSL_CTX_free(ctx);
+	SSL_free(ssl);
 	close(sockfd);
 	SSL_shutdown(ssl);
 	return -1;

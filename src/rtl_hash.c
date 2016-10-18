@@ -62,7 +62,7 @@ static rtl_hash_node *new_hash_node(void *key, void *value)
 
 	node->key = key;
 	node->value = value;
-	hlist_node_init(&node->node);
+	INIT_HLIST_NODE(&node->node);
 
 	return node;
 }
@@ -103,9 +103,8 @@ static int hash_int_find(rtl_hash_table *table, int key,
 	rtl_hash_for_each_entry(pos, table->head + offset) {
 		if (*(int *)pos->key == key) {
 			if (i < size)
-				node[i++] = pos;
-			else
-				break;
+				node[i] = pos;
+			i++;
 		}
 	}
 
@@ -127,9 +126,8 @@ static int hash_str_find(rtl_hash_table *table, const char *key,
 	rtl_hash_for_each_entry(pos, table->head + offset) {
 		if (strcmp((char *)pos->key, key) == 0) {
 			if (i < size)
-				node[i++] = pos;
-			else
-				break;
+				node[i] = pos;
+			i++;
 		}
 	}
 

@@ -1,4 +1,4 @@
-CC = gcc
+CC = cc
 LD = ld
 AR = ar
 INCLUDE = ../include

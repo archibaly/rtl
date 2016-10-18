@@ -7,6 +7,7 @@
 #define RTL_HASH_KEY_TYPE_STR	2
 
 #define rtl_hash_for_each_entry(pos, head) hlist_for_each_entry(pos, head, node)
+#define rtl_hash_for_each_entry_safe(pos, head) hlist_for_each_entry(pos, n, head, node)
 #define rtl_hash_head hlist_head
 
 typedef struct {
