@@ -183,7 +183,10 @@ int rtl_socket_recv(int sockfd, void *buff, int size)
 
 	while (nleft > 0) {
 		if ((nrecv = recv(sockfd, ptr, nleft, 0)) < 0) {
-			return -1;		/* error */
+			if (errno == EINTR)
+				continue;
+			else
+				return -1;		/* error */
 		} else {
 			break;
 		}
@@ -206,7 +209,10 @@ int rtl_socket_send(int sockfd, const void *buff, int size)
 
 	while (nleft > 0) {
 		if ((nsent = send(sockfd, ptr, nleft, 0)) < 0) {
-			return -1;
+			if (errno == EINTR)
+				continue;
+			else
+				return -1;
 		} else if (nsent == 0) {
 			break;
 		}

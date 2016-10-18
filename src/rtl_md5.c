@@ -298,7 +298,7 @@ int rtl_md5_string(const char *str, char *result, size_t size)
 	unsigned char md5[16];
 
 	if (size < 33)  /* must >= 33 */
-		return -1; 
+		return -1;
 
 	rtl_md5_init(&ctx);
 	rtl_md5_update(&ctx, str, strlen(str));

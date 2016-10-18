@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <string.h>
 #include <time.h>
 
 #include "rtl_time.h"

@@ -98,6 +98,34 @@ int rtl_get_ssid(char *ssid, size_t size, const char *ifname)
 	return 0;
 }
 
+int rtl_get_mac_from_ip(char *mac, size_t size, const char *ip)
+{
+	int ret = -1;
+	FILE *proc;
+	char ip_tmp[16];
+	char mac_tmp[18];
+
+	if (!(proc = fopen("/proc/net/arp", "r"))) {
+		return -1;
+	}
+
+	/* skip first line */
+	while (!feof(proc) && fgetc(proc) != '\n')
+		;
+
+	while (!feof(proc) && (fscanf(proc, " %15[0-9.] %*s %*s %17[A-Fa-f0-9:] %*s %*s", ip_tmp, mac_tmp) == 2)) {
+		if (strcmp(ip_tmp, ip) == 0) {
+			strncpy(mac, mac_tmp, size);
+			mac[size - 1] = '\0';
+			ret = 0;
+			break;
+		}
+	}
+
+	fclose(proc);
+	return ret;
+}
+
 static int str_to_hex(const char *str, unsigned char *result)
 {
 	int i;

@@ -1,3 +1,5 @@
+#include <errno.h>
+
 #include "rtl_writen.h"
 
 /* write "n" bytes to a descriptor */
@@ -9,7 +11,10 @@ ssize_t rtl_writen(int fd, const void *vptr, size_t n)
 
 	while (nleft > 0) {
 		if ((nwritten = write(fd, ptr, nleft)) < 0) {
-			return -1;
+			if (errno == EINTR)
+				continue;
+			else
+				return -1;
 		} else if (nwritten == 0) {
 			break;	/* has written all data */
 		}
