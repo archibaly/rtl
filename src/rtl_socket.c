@@ -137,7 +137,7 @@ int rtl_socket_connect(const char *host, int port)
 		}
 	}
 
-	if ((sockfd = rtl_socket_create(TCP)) < 0)
+	if ((sockfd = rtl_socket_create(RTL_TCP)) < 0)
 		return -1;
 
 	memset(&server_addr, 0, sizeof(server_addr));
@@ -162,13 +162,28 @@ int rtl_tcp_server_init(int port)
 {
 	int sockfd;
 
-	sockfd = rtl_socket_create(TCP);
+	sockfd = rtl_socket_create(RTL_TCP);
 	if (sockfd < 0)
 		return -1;
 	if (rtl_socket_bind(sockfd, port) < 0)
 		return -1;
 	if (rtl_socket_start_listening(sockfd) < 0)
 		return -1;
+
+	return sockfd;
+}
+
+int rtl_socket_accept(int sockfd, char *client_addr, size_t size)
+{
+	struct sockaddr_in addr;
+	socklen_t addrlen = sizeof(addr);
+
+	if (accept(sockfd, (struct sockaddr *)&addr, &addrlen) < 0)
+		return -1;
+
+	if (!inet_ntop(AF_INET, &addr.sin_addr, client_addr, size))
+		return -1;
+
 	return 0;
 }
 
