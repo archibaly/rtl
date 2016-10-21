@@ -26,8 +26,8 @@ $(LIBRARY_DIR)/$(LIB.a): $(OBJS)
 
 $(LIBRARY_DIR)/$(LIB.so): $(OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
-	ln -s $(LIB.so) $(LIBRARY_DIR)/$(SONAME)
-	ln -s $(SONAME) $(LIBRARY_DIR)/librtl.so
+	ln -sf $(LIB.so) $(LIBRARY_DIR)/$(SONAME)
+	ln -sf $(SONAME) $(LIBRARY_DIR)/librtl.so
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<

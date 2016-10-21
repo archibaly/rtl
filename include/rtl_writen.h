@@ -3,6 +3,6 @@
 
 #include <unistd.h>
 
-ssize_t rtl_writen(int fd, const void *vptr, size_t n);
+ssize_t rtl_writen(int fd, const void *ptr, size_t n);
 
 #endif	/* _RTL_WRITEN_H_ */

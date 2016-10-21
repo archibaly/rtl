@@ -178,36 +178,36 @@ int rtl_socket_accept(int sockfd, char *client_addr, size_t size)
 	struct sockaddr_in addr;
 	socklen_t addrlen = sizeof(addr);
 
-	if (accept(sockfd, (struct sockaddr *)&addr, &addrlen) < 0)
+	int fd = accept(sockfd, (struct sockaddr *)&addr, &addrlen);
+	if (fd < 0)
 		return -1;
 
-	if (!inet_ntop(AF_INET, &addr.sin_addr, client_addr, size))
+	if (!inet_ntop(AF_INET, &addr.sin_addr, client_addr, size)) {
+		close(fd);
 		return -1;
+	}
 
-	return 0;
+	return fd;
 }
 
 int rtl_socket_recv(int sockfd, void *buff, int size)
 {
 	int nleft;
-	int nrecv;
-	char *ptr;
+	int nread;
+	char *ptr = buff;
 
-	ptr = buff;
 	nleft = size;
-
 	while (nleft > 0) {
-		if ((nrecv = recv(sockfd, ptr, nleft, 0)) < 0) {
+		if ((nread = recv(sockfd, ptr, nleft, 0)) < 0) {
 			if (errno == EINTR)
 				continue;
 			else
-				return -1;		/* error */
-		} else {
-			break;
+				return -1;
+		} else if (nread == 0) {
+			break;			/* EOF */
 		}
-
-		nleft -= nrecv;
-		ptr   += nrecv;
+		nleft -= nread;
+		ptr   += nread;
 	}
 
 	return size - nleft;

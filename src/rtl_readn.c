@@ -3,10 +3,11 @@
 #include "rtl_readn.h"
 
 /* read "n" bytes from a descriptor */
-ssize_t rtl_readn(int fd, void *ptr, size_t n)
+ssize_t rtl_readn(int fd, void *vptr, size_t n)
 {
 	size_t nleft;
 	ssize_t nread;
+	char *ptr = vptr;
 
 	nleft = n;
 	while (nleft > 0) {
