@@ -3,9 +3,9 @@
 
 #include <stdint.h>
 
-#define RTL_TEA_KEY	"l(91#%2*!<6&@89^"
+#define RTL_TEA_KEY	"l(9A#%2*!<6&@!9^"
 
-int rtl_tea_encrypt(uint8_t *src, int size, const uint8_t *key);
-int rtl_tea_decrypt(uint8_t *src, int size, const uint8_t *key);
+uint8_t *rtl_tea_encrypt(const uint8_t *clear_text, int *text_len, const uint8_t *key);
+uint8_t *rtl_tea_decrypt(const uint8_t *cipher_text, int *text_len, const uint8_t *key);
 
 #endif /* _RTL_TEA_H_ */

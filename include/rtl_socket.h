@@ -18,7 +18,7 @@ int rtl_socket_start_listening(int sockfd);
 int rtl_tcp_server_init(int port);
 int rtl_socket_accept(int sockfd, char *client_addr, size_t size);
 int rtl_socket_connect(const char *host, int port);
-int rtl_socket_recv(int sockfd, void *buff, int size);
-int rtl_socket_send(int sockfd, const void *buff, int size);
+int rtl_socket_recvn(int sockfd, void *buff, int size);
+int rtl_socket_sendn(int sockfd, const void *buff, int size);
 
 #endif /* _RTL_SOCKET_H_ */

@@ -27,7 +27,7 @@ int rtl_wget(const char *orignal_url, const char *filename)
 	int n = rtl_http_build_get_header(url->host, url->path, buff);
 	rtl_url_free(url);
 
-	if (rtl_socket_send(sockfd, buff, n) < 0) {
+	if (rtl_socket_sendn(sockfd, buff, n) < 0) {
 		rtl_debug("rtl_socket_send error: %s", strerror(errno));
 		close(sockfd);
 		return -1;
@@ -43,7 +43,7 @@ int rtl_wget(const char *orignal_url, const char *filename)
 
 	int ret = 0;
 	/* receive http header first */
-	n = rtl_socket_recv(sockfd, buff, sizeof(buff));
+	n = rtl_socket_recvn(sockfd, buff, sizeof(buff));
 	if (n < 0) {
 		rtl_debug("rtl_socket_recv error: %s", strerror(errno));
 		ret = -1;
@@ -54,7 +54,7 @@ int rtl_wget(const char *orignal_url, const char *filename)
 	fwrite(buff + offset, sizeof(char), n - offset, fp);
 
 	for (;;) {
-		n = rtl_socket_recv(sockfd, buff, sizeof(buff));
+		n = rtl_socket_recvn(sockfd, buff, sizeof(buff));
 		if (n > 0) {
 			fwrite(buff, sizeof(char), n, fp);
 		} else if (n == 0) {	/* receive done */

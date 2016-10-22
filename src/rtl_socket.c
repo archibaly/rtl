@@ -190,37 +190,33 @@ int rtl_socket_accept(int sockfd, char *client_addr, size_t size)
 	return fd;
 }
 
-int rtl_socket_recv(int sockfd, void *buff, int size)
+int rtl_socket_recvn(int sockfd, void *buff, int size)
 {
-	int nleft;
-	int nread;
+	int nrevd;
+	int nleft = size;
 	char *ptr = buff;
 
-	nleft = size;
 	while (nleft > 0) {
-		if ((nread = recv(sockfd, ptr, nleft, 0)) < 0) {
+		if ((nrevd = recv(sockfd, ptr, nleft, 0)) < 0) {
 			if (errno == EINTR)
 				continue;
 			else
 				return -1;
-		} else if (nread == 0) {
+		} else if (nrevd == 0) {
 			break;			/* EOF */
 		}
-		nleft -= nread;
-		ptr   += nread;
+		nleft -= nrevd;
+		ptr   += nrevd;
 	}
 
 	return size - nleft;
 }
 
-int rtl_socket_send(int sockfd, const void *buff, int size)
+int rtl_socket_sendn(int sockfd, const void *buff, int size)
 {
-	int nleft;
 	int nsent;
-	const char *ptr;
-
-	ptr = buff;
-	nleft = size;
+	int nleft = size;
+	const char *ptr = buff;
 
 	while (nleft > 0) {
 		if ((nsent = send(sockfd, ptr, nleft, 0)) < 0) {

@@ -74,7 +74,7 @@ int rtl_http_send_request(int type, const char *host, uint16_t port, const char 
 	}
 
 	int ret = 0;
-	if (rtl_socket_send(sockfd, header, header_len) < 0) {
+	if (rtl_socket_sendn(sockfd, header, header_len) < 0) {
 		ret = -1;
 		goto out;
 	}
@@ -83,7 +83,7 @@ int rtl_http_send_request(int type, const char *host, uint16_t port, const char 
 	int nread;
 	char *ptr = resp;
 	for (;;) {
-		nread = rtl_socket_recv(sockfd, ptr, len);
+		nread = rtl_socket_recvn(sockfd, ptr, len);
 		if (nread == 0) {	/* receive done */
 			break;
 		} else if (nread < 0) {
