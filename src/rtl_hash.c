@@ -32,17 +32,17 @@ static uint32_t hash_str(const char *val, uint32_t size)
 	return hash % size;
 }
 
-rtl_hash_table *rtl_hash_init(int size, int key_type)
+struct rtl_hash_table *rtl_hash_init(int size, int key_type)
 {
 	int i;
-	rtl_hash_table *table;
+	struct rtl_hash_table *table;
 
-	if (!(table = malloc(sizeof(rtl_hash_table))))
+	if (!(table = malloc(sizeof(struct rtl_hash_table))))
 		return NULL;
 
 	table->size = next_power_of_two(size);
 	table->key_type = key_type;
-	if (!(table->head = malloc(sizeof(struct hlist_head) * table->size))) {
+	if (!(table->head = malloc(sizeof(struct rtl_hash_head) * table->size))) {
 		free(table);
 		return NULL;
 	}
@@ -53,11 +53,11 @@ rtl_hash_table *rtl_hash_init(int size, int key_type)
 	return table;
 }
 
-static rtl_hash_node *new_hash_node(void *key, void *value)
+static struct rtl_hash_node *new_rtl_hash_node(void *key, void *value)
 {
-	rtl_hash_node *node;
+	struct rtl_hash_node *node;
 
-	if (!(node = malloc(sizeof(rtl_hash_node))))
+	if (!(node = malloc(sizeof(struct rtl_hash_node))))
 		return NULL;
 
 	node->key = key;
@@ -67,10 +67,10 @@ static rtl_hash_node *new_hash_node(void *key, void *value)
 	return node;
 }
 
-int rtl_hash_add(rtl_hash_table *table, void *key, void *value)
+int rtl_hash_add(struct rtl_hash_table *table, void *key, void *value)
 {
 	int offset;
-	rtl_hash_node *node;
+	struct rtl_hash_node *node;
 
 	if (table->key_type == RTL_HASH_KEY_TYPE_INT) {
 		offset = hash_int(*(int *)key, log(table->size) / log(2));
@@ -80,7 +80,7 @@ int rtl_hash_add(rtl_hash_table *table, void *key, void *value)
 		return -1;
 	}
 
-	if (!(node = new_hash_node(key, value)))
+	if (!(node = new_rtl_hash_node(key, value)))
 		return -1;
 
 	hlist_add_head(&node->node, table->head + offset);
@@ -88,12 +88,12 @@ int rtl_hash_add(rtl_hash_table *table, void *key, void *value)
 	return 0;
 }
 
-static int hash_int_find(rtl_hash_table *table, int key,
-						 rtl_hash_node **node, size_t size)
+static int hash_int_find(struct rtl_hash_table *table, int key,
+						 struct rtl_hash_node **node, size_t size)
 {
 	int offset;
 	size_t i = 0;
-	rtl_hash_node *pos;
+	struct rtl_hash_node *pos;
 
 	if (!table)
 		return 0;
@@ -111,12 +111,12 @@ static int hash_int_find(rtl_hash_table *table, int key,
 	return i;
 }
 
-static int hash_str_find(rtl_hash_table *table, const char *key,
-						 rtl_hash_node **node, size_t size)
+static int hash_str_find(struct rtl_hash_table *table, const char *key,
+						 struct rtl_hash_node **node, size_t size)
 {
 	int offset;
 	size_t i = 0;
-	rtl_hash_node *pos;
+	struct rtl_hash_node *pos;
 
 	if (!table)
 		return 0;
@@ -137,8 +137,8 @@ static int hash_str_find(rtl_hash_table *table, const char *key,
 /*
  * @return: the number of found nodes
  */
-int rtl_hash_find(rtl_hash_table *table, const void *key,
-			  rtl_hash_node **node, size_t size)
+int rtl_hash_find(struct rtl_hash_table *table, const void *key,
+			  struct rtl_hash_node **node, size_t size)
 {
 	if (table->key_type == RTL_HASH_KEY_TYPE_INT) {
 		return hash_int_find(table, *(int *)key, node, size);
@@ -149,27 +149,30 @@ int rtl_hash_find(rtl_hash_table *table, const void *key,
 	}
 }
 
-void rtl_hash_free_node(rtl_hash_node *node)
+void rtl_hash_del(struct rtl_hash_node *node)
 {
 	if (!node)
 		return;
+
 	if (!hlist_unhashed(&node->node)) {
-		__hlist_del(&node->node);
+		hlist_del(&node->node);
 	}
+
 	free(node);
 }
 
-void rtl_hash_free(rtl_hash_table *table)
+void rtl_hash_free(struct rtl_hash_table *table)
 {
 	int i;
-	rtl_hash_node *pos;
+	struct rtl_hash_node *pos;
+	struct hlist_node *tmp;
 
 	if (!table)
 		return;
 
 	for (i = 0; i < table->size; i++) {
-		rtl_hash_for_each_entry(pos, table->head + i) {
-			rtl_hash_free_node(pos);
+		rtl_hash_for_each_entry_safe(pos, tmp, table->head + i) {
+			rtl_hash_del(pos);
 		}
 	}
 
