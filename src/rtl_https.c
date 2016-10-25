@@ -20,6 +20,7 @@ int rtl_https_send_request(int type, const char *host, uint16_t port, const char
 {
 	char header[1024];
 	int header_len;
+	int ret = -1;
 
 	if (type == RTL_HTTP_GET)
 		header_len = rtl_http_build_get_header(host, path, header);
@@ -73,27 +74,27 @@ int rtl_https_send_request(int type, const char *host, uint16_t port, const char
 		if (len < 0)	/* the buffer of resp is not enough */
 			goto free_all;
 	}
-	return ptr - resp;
+	ret = ptr - resp;
+
+free_all:
+	SSL_shutdown(ssl);
+	close(sockfd);
+	SSL_free(ssl);
+	SSL_CTX_free(ctx);
+	return ret;
+
+free_sockfd:
+	close(sockfd);
+	SSL_free(ssl);
+	SSL_CTX_free(ctx);
+	return ret;
+
+free_ssl:
+	SSL_free(ssl);
+	SSL_CTX_free(ctx);
+	return ret;
 
 free_ssl_ctx:
 	SSL_CTX_free(ctx);
-	return -1;
-
-free_ssl:
-	SSL_CTX_free(ctx);
-	SSL_free(ssl);
-	return -1;
-
-free_sockfd:
-	SSL_CTX_free(ctx);
-	SSL_free(ssl);
-	close(sockfd);
-	return -1;
-
-free_all:
-	SSL_CTX_free(ctx);
-	SSL_free(ssl);
-	close(sockfd);
-	SSL_shutdown(ssl);
-	return -1;
+	return ret;
 }
