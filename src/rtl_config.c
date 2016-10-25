@@ -19,7 +19,7 @@ typedef struct {
 static char delim = '=';
 static char comment = '#';
 
-static rtl_hash_table *config_table;
+static struct rtl_hash_table *config_table;
 
 static config_opt_t *new_config_opt(const char *name, const char *value)
 {
@@ -45,7 +45,7 @@ static config_opt_t *new_config_opt(const char *name, const char *value)
 static config_opt_t *config_add_opt(const char *name, const char *value)
 {
 	config_opt_t *opt;
-	rtl_hash_node *node;
+	struct rtl_hash_node *node;
 
 	int n = rtl_hash_find(config_table, name, &node, 1);
 
@@ -62,7 +62,7 @@ static config_opt_t *config_add_opt(const char *name, const char *value)
 static config_opt_t *config_get_opt(const char *name)
 {
 	config_opt_t *opt;
-	rtl_hash_node *node;
+	struct rtl_hash_node *node;
 
 	int n = rtl_hash_find(config_table, name, &node, 1);
 
@@ -224,7 +224,7 @@ int rtl_config_save(const char *filename)
 		return -1;
 
 	int i;
-	rtl_hash_node *pos;
+	struct rtl_hash_node *pos;
 	config_opt_t *opt;
 
 	if (!config_table) {
@@ -257,7 +257,7 @@ static void config_free_opt(config_opt_t *opt)
 void rtl_config_free(void)
 {
 	int i;
-	rtl_hash_node *pos;
+	struct rtl_hash_node *pos;
 	config_opt_t *opt;
 
 	if (!(config_table))
