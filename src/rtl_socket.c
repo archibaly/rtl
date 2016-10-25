@@ -206,7 +206,7 @@ int rtl_socket_recvn(int sockfd, void *buff, int size)
 			else
 				return -1;
 		} else if (nrevd == 0) {
-			break;			/* EOF */
+			break;			/* peer closed */
 		}
 		nleft -= nrevd;
 		ptr   += nrevd;

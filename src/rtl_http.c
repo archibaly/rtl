@@ -13,7 +13,7 @@
 int rtl_http_build_get_header(const char *hostname, const char *path, char *header)
 {
 	const char *getpath = path;
-	char *tpl = "RTL_HTTP_GET /%s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n";
+	char *tpl = "GET /%s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n";
 
 	if (getpath[0] == '/')
 		getpath++;
@@ -31,7 +31,7 @@ int rtl_http_build_get_header(const char *hostname, const char *path, char *head
 int rtl_http_build_post_header(const char *hostname, const char *path, char *header)
 {
 	const char *postpath = path;
-	char *tpl = "RTL_HTTP_POST /%s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n";
+	char *tpl = "POST /%s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n";
 
 	if (postpath[0] == '/')
 		postpath++;
@@ -69,9 +69,8 @@ int rtl_http_send_request(int type, const char *host, uint16_t port, const char 
 		return -1;
 
 	int sockfd = rtl_socket_connect(host, port);
-	if (sockfd < 0) {
+	if (sockfd < 0)
 		return -1;
-	}
 
 	int ret = 0;
 	if (rtl_socket_sendn(sockfd, header, header_len) < 0) {
@@ -80,24 +79,7 @@ int rtl_http_send_request(int type, const char *host, uint16_t port, const char 
 	}
 
 	/* read response */
-	int nread;
-	char *ptr = resp;
-	for (;;) {
-		nread = rtl_socket_recvn(sockfd, ptr, len);
-		if (nread == 0) {	/* receive done */
-			break;
-		} else if (nread < 0) {
-			ret = -1;
-			goto out;
-		}
-		len -= nread;
-		ptr += nread;
-		if (len < 0) {	/* the buffer of resp is not enough */
-			ret = -1;
-			goto out;
-		}
-	}
-	ret = ptr - resp;
+	ret = rtl_socket_recvn(sockfd, resp, len);
 
 out:
 	close(sockfd);

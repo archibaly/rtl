@@ -9,14 +9,14 @@
 #include "rtl_socket.h"
 
 /*
- * @type: RTL_HTTPGET or RTL_HTTP_POST
+ * @type: RTL_HTTP_GET or RTL_HTTP_POST
  * @host: the remote host
  * @port: the remote host port
  * @path: the path to request
  * @resp: response buffer
  * @len: the length of response buffer
  */
-int https_send_request(int type, const char *host, uint16_t port, const char *path, char *resp, int len)
+int rtl_https_send_request(int type, const char *host, uint16_t port, const char *path, char *resp, int len)
 {
 	char header[1024];
 	int header_len;
