@@ -182,6 +182,9 @@ int rtl_socket_accept(int sockfd, char *client_addr, size_t size)
 	if (fd < 0)
 		return -1;
 
+	if (!client_addr || !size)
+		return fd;
+
 	if (!inet_ntop(AF_INET, &addr.sin_addr, client_addr, size)) {
 		close(fd);
 		return -1;
