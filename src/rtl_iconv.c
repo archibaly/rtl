@@ -13,13 +13,17 @@ int rtl_iconv(char *from_charset, char *to_charset, char *inbuf, size_t inlen, c
 	if (cd == 0)
 		return -1;
 
+	int ret = 0;
+
 	memset(outbuf, 0, outlen);
-	if (iconv(cd, pin, &inlen, pout, &outlen) == -1)
-		return -1;
+	if (iconv(cd, pin, &inlen, pout, &outlen) == -1) {
+		ret = -1;
+		goto out;
+	}
 
+out:
 	iconv_close(cd);
-
-	return 0;
+	return ret;
 }
 
 int rtl_u2g(char *inbuf, int inlen, char *outbuf, int outlen)
