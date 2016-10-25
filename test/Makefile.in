@@ -1,0 +1,3 @@
+CC = cc
+INCLUDE_DIR = $(HOME)/c/rtl/include
+LIBRARY_DIR = $(HOME)/c/rtl/lib
