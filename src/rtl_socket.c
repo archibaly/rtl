@@ -92,15 +92,22 @@ int rtl_socket_start_listening(int sockfd)
  * @hostname: in
  * @ip: out
  */
-static int get_ip(const char *hostname, char *ip)
+static int get_ip(const char *hostname, char *ip, size_t size)
 {
-	struct hostent *ht;
-	ht = gethostbyname(hostname);
+	struct addrinfo hints;
+	struct addrinfo *res;
 
-	if (ht == NULL)
-		return -1;
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
 
-	if (!inet_ntop(AF_INET, ht->h_addr_list[0], ip, INET_ADDRSTRLEN))
+	int s = getaddrinfo(hostname, NULL, &hints, &res);
+	if (s != 0)
+	   return -1;
+
+	struct sockaddr_in *ptr = (struct sockaddr_in *)res->ai_addr;
+	if (!inet_ntop(AF_INET, &ptr->sin_addr, ip, size))
 		return -1;
 
 	return 0;
@@ -132,7 +139,7 @@ int rtl_socket_connect(const char *host, int port)
 	if (host_is_ipv4(host)) {
 		strcpy(ip, host);
 	} else {
-		if (get_ip(host, ip) < 0) {
+		if (get_ip(host, ip, sizeof(ip)) < 0) {
 			return -1;
 		}
 	}
