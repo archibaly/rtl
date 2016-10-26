@@ -6,68 +6,55 @@
 
 #include "rtl_url.h"
 #include "rtl_http.h"
+#include "rtl_https.h"
 #include "rtl_socket.h"
 #include "rtl_debug.h"
 
-/* so far, just support http */
-int rtl_wget(const char *orignal_url, const char *filename)
+static int wget_http(const char *filename, const char *path, const char *host,
+					 int port)
 {
+	int sockfd = rtl_http_send_get_request(path, host, port);
+	if (sockfd < 0)
+		return -1;
+
+	return rtl_http_save_body_to_file(sockfd, filename);
+}
+
+static int wget_https(const char *filename, const char *path, const char *host,
+					  int port)
+{
+	struct ssl ssl;
+
+	if (rtl_https_send_get_request(&ssl, path, host, port) < 0)
+		return -1;
+
+	return rtl_https_save_body_to_file(&ssl, filename);
+}
+
+/* so far, just support http and https */
+int rtl_wget(const char *orignal_url)
+{
+	char *filename = rtl_get_file_name_from_url(orignal_url);
+	if (!filename)
+		return -1;
+
 	rtl_url_field_t *url = rtl_url_parse(orignal_url);
 	if (url == NULL)
 		return -1;
 
-	int sockfd;
-	int port = url->port == NULL ? 80 : atoi(url->port);
-	if ((sockfd = rtl_socket_connect(url->host, port)) < 0) {
-		rtl_debug("rtl_socket_connect error: %s", strerror(errno));
-		return -1;
-	}
-
-	char buff[BUFSIZ];
-	int n = rtl_http_build_get_header(url->host, url->path, buff);
-	rtl_url_free(url);
-
-	if (rtl_socket_sendn(sockfd, buff, n) < 0) {
-		rtl_debug("rtl_socket_send error: %s", strerror(errno));
-		close(sockfd);
-		return -1;
-	}
-
-	/* store to file */
-	FILE *fp = fopen(filename, "w");
-	if (fp == NULL) {
-		rtl_debug("fopen error: %s", strerror(errno));
-		close(sockfd);
-		return -1;
-	}
-
 	int ret = 0;
-	/* receive http header first */
-	n = rtl_socket_recvn(sockfd, buff, sizeof(buff));
-	if (n < 0) {
-		rtl_debug("rtl_socket_recv error: %s", strerror(errno));
+	int port = 0;
+
+	if (strcmp(url->schema, "http") == 0) {
+		port = url->port == NULL ? 80 : atoi(url->port);
+		ret = wget_http(filename, url->path, url->host, port);
+	} else if (strcmp(url->schema, "https") == 0) {
+		port = url->port == NULL ? 443 : atoi(url->port);
+		ret = wget_https(filename, url->path, url->host, port);
+	} else {
 		ret = -1;
-		goto out;
 	}
 
-	int offset = rtl_http_get_body_pos(buff, n);
-	fwrite(buff + offset, sizeof(char), n - offset, fp);
-
-	for (;;) {
-		n = rtl_socket_recvn(sockfd, buff, sizeof(buff));
-		if (n > 0) {
-			fwrite(buff, sizeof(char), n, fp);
-		} else if (n == 0) {	/* receive done */
-			break;
-		} else {
-			rtl_debug("rtl_socket_recv error: %s", strerror(errno));
-			ret = -1;
-			goto out;
-		}
-	}
-
-out:
-	close(sockfd);
-	fclose(fp);
+	rtl_url_free(url);
 	return ret;
 }

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "rtl_url.h"
+#include "rtl_kmp.h"
 
 static char *str_hosttype[] = {"host ipv4", "host ipv6", "host domain", NULL};
 
@@ -221,4 +222,24 @@ void rtl_url_field_print(rtl_url_field_t *url)
 	}
 	if (url->fragment)
 		fprintf(stdout, "  - fragment: '%s'\n", url->fragment);
+}
+
+char *rtl_get_file_name_from_url(const char *url)
+{
+	int pos = 0;
+	const char *p = url;
+
+	if (url == NULL)
+		return NULL;
+
+	for (;;) {
+		p += pos;
+		pos = rtl_kmp(p, "/");
+		if (pos >= 0)
+			pos++;
+		else
+			break;
+	}
+
+	return (char *)p;
 }
