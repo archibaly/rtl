@@ -19,5 +19,6 @@ int rtl_https_send_post_request(struct ssl *ssl, const char *path,
 								size_t body_len);
 int rtl_https_recv_response(struct ssl *ssl, uint8_t *resp, size_t size);
 int rtl_https_save_body_to_file(struct ssl *ssl, const char *filename);
+void rtl_https_end_request(struct ssl *ssl);
 
 #endif /* _RTL_HTTPS_H_ */

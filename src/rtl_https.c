@@ -190,3 +190,11 @@ out:
 
 	return ret;
 }
+
+void rtl_https_end_request(struct ssl *ssl)
+{
+	SSL_shutdown(ssl->ssl);
+	close(ssl->sockfd);
+	SSL_free(ssl->ssl);
+	SSL_CTX_free(ssl->ctx);
+}
