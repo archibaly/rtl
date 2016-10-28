@@ -122,16 +122,6 @@ int rtl_http_recv_response(int sockfd, uint8_t *resp, size_t size)
 	return n;
 }
 
-static int fwriten(uint8_t *buf, int len, FILE *fp)
-{
-	int n = fwrite(buf, sizeof(uint8_t), len, fp);
-
-	if (n != len)
-		return -1;
-
-	return 0;
-}
-
 int rtl_http_save_body_to_file(int sockfd, const char *filename)
 {
 	uint8_t buff[BUFSIZ];
@@ -148,13 +138,13 @@ int rtl_http_save_body_to_file(int sockfd, const char *filename)
 		goto out;
 
 	int body_pos = rtl_http_get_body_pos(buff, n);
-	if (fwriten(buff + body_pos, n - body_pos, fp) < 0)
+	if (fwrite(buff + body_pos, sizeof(uint8_t), n - body_pos, fp) < 0)
 		goto out;
 
 	for (;;) {
 		n = recv(sockfd, buff, sizeof(buff), 0);
 		if (n > 0) {
-			if (fwriten(buff, n, fp) < 0)
+			if (fwrite(buff, sizeof(uint8_t), n, fp) < 0)
 				goto out;
 		} else if (n == 0) {	/* receive done */
 			break;
