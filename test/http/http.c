@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include <rtl_http.h>
 #include <rtl_https.h>
@@ -36,9 +37,11 @@ int main(int argc, char **argv)
 
 	if (strcmp(argv[1], "http") == 0) {
 		rtl_http_recv_response(sockfd, (uint8_t *)resp, sizeof(resp));
+		close(sockfd);
 		/* rtl_http_save_body_to_file(sockfd, "body"); */
 	} else {
 		rtl_https_recv_response(&ssl, (uint8_t *)resp, sizeof(resp));
+		rtl_https_end_request(&ssl);
 		/* rtl_https_save_body_to_file(&ssl, "body"); */
 	}
 
