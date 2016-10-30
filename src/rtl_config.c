@@ -9,7 +9,7 @@
 #include "rtl_config.h"
 
 #define END_LINE(c)			(c == '\n' || c == '\0')
-#define HASH_NUM_BUCKETS	32
+#define HASH_NUM_BUCKETS	37
 
 typedef struct {
 	char *name;
