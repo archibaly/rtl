@@ -138,13 +138,13 @@ int rtl_http_save_body_to_file(int sockfd, const char *filename)
 		goto out;
 
 	int body_pos = rtl_http_get_body_pos(buff, n);
-	if (fwrite(buff + body_pos, sizeof(uint8_t), n - body_pos, fp) < 0)
+	if (fwrite(buff + body_pos, sizeof(uint8_t), n - body_pos, fp) != n - body_pos)
 		goto out;
 
 	for (;;) {
 		n = recv(sockfd, buff, sizeof(buff), 0);
 		if (n > 0) {
-			if (fwrite(buff, sizeof(uint8_t), n, fp) < 0)
+			if (fwrite(buff, sizeof(uint8_t), n, fp) != n)
 				goto out;
 		} else if (n == 0) {	/* receive done */
 			break;

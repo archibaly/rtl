@@ -153,13 +153,13 @@ int rtl_https_save_body_to_file(struct ssl *ssl, const char *filename)
 		goto out;
 
 	int body_pos = rtl_http_get_body_pos(buff, n);
-	if (fwrite(buff + body_pos, sizeof(uint8_t), n - body_pos, fp) < 0)
+	if (fwrite(buff + body_pos, sizeof(uint8_t), n - body_pos, fp) != n - body_pos)
 		goto out;
 
 	for (;;) {
 		n = SSL_read(ssl->ssl, buff, sizeof(buff));
 		if (n > 0) {
-			if (fwrite(buff, sizeof(uint8_t), n, fp) < 0)
+			if (fwrite(buff, sizeof(uint8_t), n, fp) != n)
 				goto out;
 		} else if (n == 0) {	/* receive done */
 			break;
