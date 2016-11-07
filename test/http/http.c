@@ -7,6 +7,9 @@
 #include <rtl_http.h>
 #include <rtl_https.h>
 #include <rtl_debug.h>
+#include <openssl/ssl.h>
+#include <openssl/rand.h>
+#include <openssl/crypto.h>
 
 int main(int argc, char **argv)
 {
