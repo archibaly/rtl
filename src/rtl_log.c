@@ -88,9 +88,11 @@ void rtl_log_write(int level, const char *fmt, ...)
 	if (level > log.level || !log.fp)
 		return;
 
-	if (access(log.name, 0) < 0)
+	if (access(log.name, F_OK) < 0) {
+		fclose(log.fp);
 		if (rtl_log_open(log.name) < 0)
 			return;
+	}
 
 	log_max_size_check();
 
