@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "rtl_url.h"
 #include "rtl_kmp.h"
 
 static char *str_hosttype[] = {"host ipv4", "host ipv6", "host domain", NULL};
+static char hex[] = "0123456789ABCDEF";
 
 extern char *strndup(const char *__string, size_t __n);
 
@@ -242,4 +244,70 @@ char *rtl_get_file_name_from_url(const char *url)
 	}
 
 	return (char *)p;
+}
+
+static char from_hex(char ch)
+{
+	return isdigit(ch) ? ch - '0' : tolower(ch) - 'a' + 10;
+}
+
+static char to_hex(char code)
+{
+	return hex[code & 15];
+}
+
+/* IMPORTANT: be sure to free() the returned string after use */
+char *rtl_url_encode(char *str)
+{
+	char *pstr = str;
+	char *buf = malloc(strlen(str) * 3 + 1);
+	char *pbuf = buf;
+
+	if (!pbuf)
+		return NULL;
+
+	while (*pstr) {
+		if (isalnum(*pstr) || *pstr == '-' || *pstr == '_' || *pstr == '.' ||
+			*pstr == '~') {
+			*pbuf++ = *pstr;
+		} else if (*pstr == ' ') {
+			*pbuf++ = '+';
+		} else {
+			*pbuf++ = '%';
+			*pbuf++ = to_hex(*pstr >> 4);
+			*pbuf++ = to_hex(*pstr & 15);
+		}
+		pstr++;
+	}
+	*pbuf = '\0';
+
+	return buf;
+}
+
+/* IMPORTANT: be sure to free() the returned string after use */
+char *rtl_url_decode(char *str)
+{
+	char *pstr = str;
+	char *buf = malloc(strlen(str) + 1);
+	char *pbuf = buf;
+
+	if (!pbuf)
+		return NULL;
+
+	while (*pstr) {
+		if (*pstr == '%') {
+			if (pstr[1] && pstr[2]) {
+				*pbuf++ = from_hex(pstr[1]) << 4 | from_hex(pstr[2]);
+				pstr += 2;
+			}
+		} else if (*pstr == '+') {
+			*pbuf++ = ' ';
+		} else {
+			*pbuf++ = *pstr;
+		}
+		pstr++;
+	}
+	*pbuf = '\0';
+
+	return buf;
 }
