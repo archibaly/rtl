@@ -38,7 +38,7 @@ int rtl_http_build_post_header(char *header, size_t size, const char *path,
 							   const char *hostname, int content_len)
 {
 	const char *postpath = path;
-	char *tpl = "POST /%s HTTP/1.1\r\nHost: %s\r\nContent-Length: %d\n\nConnection: close\r\n\r\n";
+	char *tpl = "POST /%s HTTP/1.1\r\nHost: %s\r\nContent-Length: %d\r\nConnection: close\r\n\r\n";
 
 	if (postpath[0] == '/')
 		postpath++;
@@ -109,7 +109,6 @@ int rtl_http_send_post_request(const char *path, const char *host, int port,
 	}
 
 	return sockfd;
-
 }
 
 int rtl_http_recv_response(int sockfd, uint8_t *resp, size_t size)
