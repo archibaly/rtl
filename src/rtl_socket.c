@@ -5,7 +5,6 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
-#include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -36,7 +35,7 @@ int rtl_socket_set_non_blocking(int sockfd)
 static int socket_reuse_endpoint(int sockfd)
 {
 	int reuse = 1;
-	if ((setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))) < 0) {
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
 		rtl_debug("setsockopt error: %s", strerror(errno));
 		return -1;
 	}
@@ -46,18 +45,13 @@ static int socket_reuse_endpoint(int sockfd)
 int rtl_socket_create(int type)
 {
 	int sockfd;
-	/*
-	 * Don't let the system abort the application when it tries to send bytes
-	 * through a connection already closed by the client
-	 */
-	signal(SIGPIPE, SIG_IGN);
 
 	if ((sockfd = socket(AF_INET, type, 0)) < 0) {
 		rtl_debug("socket error: %s", strerror(errno));
 		return -1;
 	}
 
-	if (socket_reuse_endpoint(sockfd) < 0 )
+	if (socket_reuse_endpoint(sockfd) < 0)
 		return -1;
 
 	return sockfd;

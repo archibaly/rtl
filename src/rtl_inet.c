@@ -13,7 +13,7 @@
 #include "rtl_inet.h"
 #include "rtl_debug.h"
 
-int rtl_get_mac(char *mac, size_t size, const char *ifname)
+int rtl_get_mac(char *mac, const char *fmt, size_t size, const char *ifname)
 {
 	int sock;
 	struct ifreq _ifreq;
@@ -30,13 +30,13 @@ int rtl_get_mac(char *mac, size_t size, const char *ifname)
 		return -1;
 	}
 
-	snprintf(mac, size, "%02X:%02X:%02X:%02X:%02X:%02X",
-			(unsigned char)_ifreq.ifr_hwaddr.sa_data[0],
-			(unsigned char)_ifreq.ifr_hwaddr.sa_data[1],
-			(unsigned char)_ifreq.ifr_hwaddr.sa_data[2],
-			(unsigned char)_ifreq.ifr_hwaddr.sa_data[3],
-			(unsigned char)_ifreq.ifr_hwaddr.sa_data[4],
-			(unsigned char)_ifreq.ifr_hwaddr.sa_data[5]);
+	snprintf(mac, size, fmt,
+			 (unsigned char)_ifreq.ifr_hwaddr.sa_data[0],
+			 (unsigned char)_ifreq.ifr_hwaddr.sa_data[1],
+			 (unsigned char)_ifreq.ifr_hwaddr.sa_data[2],
+			 (unsigned char)_ifreq.ifr_hwaddr.sa_data[3],
+			 (unsigned char)_ifreq.ifr_hwaddr.sa_data[4],
+			 (unsigned char)_ifreq.ifr_hwaddr.sa_data[5]);
 
 	close(sock);
 
@@ -130,6 +130,7 @@ static int str_to_hex(const char *str, unsigned char *result)
 {
 	int i;
 	int len = strlen(str);
+
 	*result = 0;
 
 	for (i = 0; i < len; i++) {
@@ -150,19 +151,16 @@ static int str_to_hex(const char *str, unsigned char *result)
 /* "xx:xx:xx:xx:xx:xx" -> {xx, xx, xx, xx, xx, xx} */
 int rtl_mac_str_to_hex(const char *str, unsigned char *mac, size_t size)
 {
-	char *copy;
-	char *tmp;
-
-	if (!(copy = strdup(str)))
-		return -1;
-
-	tmp = copy;
-
-	char *p;
+	char *cp, *tmp, *p;
 	size_t i;
 
+	if (!(cp = strdup(str)))
+		return -1;
+
+	tmp = cp;
+
 	for (i = 0; i < size; i++) {
-		if ((p = strsep(&copy, ":")) != NULL)
+		if ((p = strsep(&cp, ":")) != NULL)
 			str_to_hex(p, mac + i);
 		else
 			break;
