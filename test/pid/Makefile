@@ -1,10 +1,10 @@
 include ../Makefile.in
 
-EXE = http
+EXE = pid
 CFLAGS = -Wall -I$(INCLUDE_DIR) -DDEBUG
-LDFLAGS = $(LIBRARY_DIR)/librtl.a.0.9.5 -lssl
+LDFLAGS = $(LIBRARY_DIR)/librtl.a.0.9.5
 
-$(EXE): http.o
+$(EXE): pid.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
