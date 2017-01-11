@@ -243,7 +243,10 @@ char *rtl_get_file_name_from_url(const char *url)
 			break;
 	}
 
-	return (char *)p;
+	if (p[0] == '\0')
+		return NULL;
+	else
+		return (char *)p;
 }
 
 static char from_hex(char ch)

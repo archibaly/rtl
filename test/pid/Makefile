@@ -2,7 +2,7 @@ include ../Makefile.in
 
 EXE = pid
 CFLAGS = -Wall -I$(INCLUDE_DIR) -DDEBUG
-LDFLAGS = $(LIBRARY_DIR)/librtl.a.0.9.5
+LDFLAGS = $(LIBRARY_DIR)/librtl.a
 
 $(EXE): pid.o
 	$(CC) -o $@ $^ $(LDFLAGS)

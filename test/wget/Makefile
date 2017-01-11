@@ -1,8 +1,8 @@
 include ../Makefile.in
 
 EXE = wget
-CFLAGS = -Wall -I$(INCLUDE_DIR) -DDEBUG
-LDFLAGS = $(LIBRARY_DIR)/librtl.a.0.9.2 -lssl
+CFLAGS = -Wall -I$(INCLUDE_DIR) -DDEBUG -g
+LDFLAGS = $(LIBRARY_DIR)/librtl.a -lssl
 
 $(EXE): wget.o
 	$(CC) -o $@ $^ $(LDFLAGS)

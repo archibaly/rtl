@@ -2,7 +2,7 @@ include ../Makefile.in
 
 EXE = shm
 CFLAGS = -Wall -I$(INCLUDE_DIR) -DDEBUG
-LDFLAGS = $(LIBRARY_DIR)/librtl.a.0.9.2 -lssl
+LDFLAGS = $(LIBRARY_DIR)/librtl.a -lssl
 
 $(EXE): shm.o
 	$(CC) -o $@ $^ $(LDFLAGS)

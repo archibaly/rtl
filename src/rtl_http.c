@@ -19,6 +19,8 @@ int rtl_http_build_get_header(char *header, size_t size, const char *path,
 	const char *getpath = path;
 	char *tpl = "GET /%s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n";
 
+	rtl_debug("path: %s", path);
+
 	if (getpath[0] == '/')
 		getpath++;
 
