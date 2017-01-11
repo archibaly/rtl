@@ -5,7 +5,7 @@
 #include <err.h>
 #include <stdbool.h>
 
-#include "rtl_ctables.h"
+#include "rtl_table.h"
 
 /* prints given symbol */
 static void ms(int space, int symbol)
@@ -15,7 +15,7 @@ static void ms(int space, int symbol)
 }
 
 /* MAKE sure you check for NULL returning from these */
-char *rtl_cnvrt_int(int x)
+char *rtl_table_cnvrt_int(int x)
 {
 	int n = 15;
 
@@ -29,7 +29,7 @@ char *rtl_cnvrt_int(int x)
 	return in_buf;
 }
 
-char *rtl_cnvrt_hex(int x)
+char *rtl_table_cnvrt_hex(int x)
 {
 	int n = 15;
 
@@ -43,7 +43,7 @@ char *rtl_cnvrt_hex(int x)
 	return hx_buf;
 }
 
-char *rtl_cnvrt_ptr(void *ptr)
+char *rtl_table_cnvrt_ptr(void *ptr)
 {
 	int n = 15;
 
@@ -95,12 +95,12 @@ static int calculate_strlen(const char *str)
 	return len;
 }
 
-/* RTL_LEFT: Has no space at the beginning, 4 columns at the end
+/* RTL_TABLE_LEFT: Has no space at the beginning, 4 columns at the end
  *          |example    |
- * RTL_RIGHT:
+ * RTL_TABLE_RIGHT:
  *        4 columns at the beginning
  *          |    example|
- * RTL_CENTER:
+ * RTL_TABLE_CENTER:
  *          2 columns at beginning, 2 at the end
  *          |  example  |
  *
@@ -147,7 +147,7 @@ static int *calculate_width(rtl_table_t * table)
 }
 
 /* consider using a bit array for options */
-rtl_table_t *rtl_initialize_table(int op[], int dim_i, int dim_j)
+rtl_table_t *rtl_table_initialize_table(int op[], int dim_i, int dim_j)
 {
 	int i, j;
 
@@ -166,7 +166,7 @@ rtl_table_t *rtl_initialize_table(int op[], int dim_i, int dim_j)
 	new_table->index_i = 0;
 	new_table->index_j = 0;
 
-	for (j = 0; j < RTL_MAX_OPS; j++) {
+	for (j = 0; j < RTL_TABLE_MAX_OPS; j++) {
 		new_table->options[j] = op[j];
 	}
 
@@ -174,7 +174,7 @@ rtl_table_t *rtl_initialize_table(int op[], int dim_i, int dim_j)
 	for (i = 0; i < new_table->row_dimension; i++) {
 		for (j = 0; j < new_table->col_dimension; j++) {
 			new_table->info[i][j].str = "";
-			new_table->info[i][j].color = RTL_DEFAULT;
+			new_table->info[i][j].color = RTL_TABLE_DEFAULT;
 			new_table->info[i][j].width = 0;
 			new_table->info[i][j].cell_width = 4;
 		}
@@ -183,7 +183,7 @@ rtl_table_t *rtl_initialize_table(int op[], int dim_i, int dim_j)
 	return new_table;
 }
 
-void rtl_add(rtl_table_t * table, char *in_str)
+void rtl_table_add(rtl_table_t * table, char *in_str)
 {
 	if (!in_str)
 		errx(1, "Error, not enough space allocated for table data!");
@@ -208,7 +208,7 @@ void rtl_add(rtl_table_t * table, char *in_str)
 	/* free(in_str); */
 }
 
-void rtl_edit(rtl_table_t * table, int row, int col, char *edit_str)
+void rtl_table_edit(rtl_table_t * table, int row, int col, char *edit_str)
 {
 	if (!edit_str)
 		errx(1, "Error, not enough memory allocated");
@@ -221,18 +221,18 @@ void rtl_edit(rtl_table_t * table, int row, int col, char *edit_str)
 	table->info[row][col].width = calculate_strlen(edit_str);
 }
 
-void rtl_add_freely(rtl_table_t * table, int row, int col, char *in_str)
+void rtl_table_add_freely(rtl_table_t * table, int row, int col, char *in_str)
 {
 
 	if (!in_str) {
 		errx(1, "Unable to acquire enough memory from sys.");
 	}
 
-	if (table->options[0] != RTL_FREELY) {
+	if (table->options[0] != RTL_TABLE_FREELY) {
 		fprintf(stderr,
 				"Please optimize your table to be able to add data freely.");
 		errx(1,
-			 "Pass RTL_FREELY to the first index of your options array [RTL_FREELY, ... , ... ].");
+			 "Pass RTL_TABLE_FREELY to the first index of your options array [RTL_TABLE_FREELY, ... , ... ].");
 	}
 
 	if (row < table->row_dimension && col < table->col_dimension) {
@@ -246,12 +246,12 @@ void rtl_add_freely(rtl_table_t * table, int row, int col, char *in_str)
 }
 
 /* consider changing color_c to ENUM to prevent non-sensical colors */
-void rtl_color_me(rtl_table_t * table, int row, int col, char *color_c)
+void rtl_table_color_me(rtl_table_t * table, int row, int col, char *color_c)
 {
 	table->info[row][col].color = color_c;
 }
 
-void rtl_color_string(rtl_table_t * table, char *str_find, char *color_c)
+void rtl_table_color_string(rtl_table_t * table, char *str_find, char *color_c)
 {
 	int i, j;
 
@@ -264,7 +264,7 @@ void rtl_color_string(rtl_table_t * table, char *str_find, char *color_c)
 	}
 }
 
-void rtl_color_row(rtl_table_t * table, int col, char *color_c)
+void rtl_table_color_row(rtl_table_t * table, int col, char *color_c)
 {
 	int i;
 
@@ -273,7 +273,7 @@ void rtl_color_row(rtl_table_t * table, int col, char *color_c)
 	}
 }
 
-void rtl_color_columns(rtl_table_t * table, int row, char *color_c)
+void rtl_table_color_columns(rtl_table_t * table, int row, char *color_c)
 {
 	int j;
 
@@ -285,13 +285,13 @@ void rtl_color_columns(rtl_table_t * table, int row, char *color_c)
 
 static void filler_p(rtl_table_t * table)
 {
-	printf("%c", (table->options[1] == RTL_TRANSPARENT) ? ' ' : '|');
+	printf("%c", (table->options[1] == RTL_TABLE_TRANSPARENT) ? ' ' : '|');
 }
 
 /* this function is 40% of the file
  * it HAS to be simplified
  */
-void rtl_print(rtl_table_t * table)
+void rtl_table_print(rtl_table_t * table)
 {
 	/* Initialize variables............. */
 	int i, j;
@@ -307,11 +307,11 @@ void rtl_print(rtl_table_t * table)
 	/*
 	 * Check table properties, colors, transparency etc.
 	 */
-	if (table->options[1] == RTL_COLORFUL)
+	if (table->options[1] == RTL_TABLE_COLORFUL)
 		has_colors = 1;
-	if (table->options[1] == RTL_TRANSPARENT)
+	if (table->options[1] == RTL_TABLE_TRANSPARENT)
 		is_transparent = 1;
-	if (table->options[3] == RTL_ENUMERATE)
+	if (table->options[3] == RTL_TABLE_ENUMERATE)
 		is_enumerated = 1;
 
 	/*---------------------------------------------------*/
@@ -330,7 +330,7 @@ void rtl_print(rtl_table_t * table)
 
 	if (is_enumerated) {
 		for (i = 0; i < table->col_dimension; i++) {
-			if (align == RTL_LEFT) {
+			if (align == RTL_TABLE_LEFT) {
 				if (i == 0) {
 					ms(1, ' ');
 
@@ -338,11 +338,11 @@ void rtl_print(rtl_table_t * table)
 					ms(width_arr[i] + 4, ' ');
 				}
 				printf("%i", i);
-			} else if (align == RTL_RIGHT) {
+			} else if (align == RTL_TABLE_RIGHT) {
 				ms(width_arr[i] + 4, ' ');
 				printf("%i", i);
 
-			} else if (align == RTL_CENTER) {
+			} else if (align == RTL_TABLE_CENTER) {
 				if (i == 0) {
 					ms(width_arr[0] + 3, ' ');
 				} else {
@@ -422,12 +422,12 @@ void rtl_print(rtl_table_t * table)
 
 		for (j = 0; j < table->col_dimension; j++) {
 			switch (align) {
-			case RTL_LEFT:
+			case RTL_TABLE_LEFT:
 				if (has_colors || is_transparent) {
 					printf("%s", table->info[i][j].color);
 					printf("%s", table->info[i][j].str);
 					ms(table->info[i][j].cell_width, ' ');
-					printf("%s", RTL_DEFAULT);
+					printf("%s", RTL_TABLE_DEFAULT);
 				} else {
 					printf("%s", table->info[i][j].str);
 					ms(table->info[i][j].cell_width, ' ');
@@ -436,12 +436,12 @@ void rtl_print(rtl_table_t * table)
 				filler_p(table);
 
 				break;
-			case RTL_RIGHT:
+			case RTL_TABLE_RIGHT:
 				if (has_colors || is_transparent) {
 					printf("%s", table->info[i][j].color);
 					ms(table->info[i][j].cell_width, ' ');
 					printf("%s", table->info[i][j].str);
-					printf("%s", RTL_DEFAULT);
+					printf("%s", RTL_TABLE_DEFAULT);
 
 				} else {
 					ms(table->info[i][j].cell_width, ' ');
@@ -450,7 +450,7 @@ void rtl_print(rtl_table_t * table)
 
 				filler_p(table);
 				break;
-			case RTL_CENTER:
+			case RTL_TABLE_CENTER:
 				check_size = (table->info[i][j].cell_width +
 							  table->info[i][j].width +
 							  table->info[i][j].cell_width);
@@ -461,7 +461,7 @@ void rtl_print(rtl_table_t * table)
 						printf("%s", table->info[i][j].str);
 						ms(table->info[i][j].cell_width +
 						   table->info[i][j].max_cell_w - check_size, ' ');
-						printf("%s", RTL_DEFAULT);
+						printf("%s", RTL_TABLE_DEFAULT);
 
 					} else {
 						ms(table->info[i][j].cell_width, ' ');
@@ -476,7 +476,7 @@ void rtl_print(rtl_table_t * table)
 						ms(table->info[i][j].cell_width, ' ');
 						printf("%s", table->info[i][j].str);
 						ms(table->info[i][j].cell_width, ' ');
-						printf("%s", RTL_DEFAULT);
+						printf("%s", RTL_TABLE_DEFAULT);
 					} else {
 						ms(table->info[i][j].cell_width, ' ');
 						printf("%s", table->info[i][j].str);
@@ -518,7 +518,7 @@ void rtl_print(rtl_table_t * table)
 	free(width_arr);
 }
 
-void rtl_free_table(rtl_table_t * table)
+void rtl_table_free(rtl_table_t * table)
 {
 	int i;
 
