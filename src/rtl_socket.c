@@ -100,11 +100,13 @@ static int get_ip(const char *hostname, char *ip, size_t size)
 	if (s != 0)
 	   return -1;
 
+	int ret = 0;
 	struct sockaddr_in *ptr = (struct sockaddr_in *)res->ai_addr;
 	if (!inet_ntop(AF_INET, &ptr->sin_addr, ip, size))
-		return -1;
+		ret = -1;
 
-	return 0;
+	freeaddrinfo(res);
+	return ret;
 }
 
 static int host_is_ipv4(const char *str)
