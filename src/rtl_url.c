@@ -9,8 +9,6 @@
 static char *str_hosttype[] = {"host ipv4", "host ipv6", "host domain", NULL};
 static char hex[] = "0123456789ABCDEF";
 
-extern char *strndup(const char *__string, size_t __n);
-
 int rtl_host_is_ipv4(const char *str)
 {
 	if (!str)

@@ -27,7 +27,7 @@ int rtl_proc_spawn(rtl_spawn_proc_pt proc, void *args, char *name, int respawn)
 	}
 
 	if (s == RTL_MAX_PROCESSES) {
-		rtl_log_write(RTL_LOG_ERRO, "no more than %d rtl_processes can be spawned",
+		rtl_log_write(RTL_LOG_ERR, "no more than %d rtl_processes can be spawned",
 					  RTL_MAX_PROCESSES);
 		return -1;
 	}
@@ -65,7 +65,7 @@ void rtl_proc_wait(void)
 	for (;;) {
 		pid = waitpid(-1, &status, 0);
 		if (pid == -1) {
-			rtl_log_write(RTL_LOG_ERRO, "waitpid error: %s", strerror(errno));
+			rtl_log_write(RTL_LOG_ERR, "waitpid error: %s", strerror(errno));
 			continue;
 		}
 

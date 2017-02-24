@@ -16,7 +16,7 @@ struct log {
 	int level;
 };
 
-static struct log log = {NULL, "", LOG_MAX_FILE_SIZE, RTL_LOG_DEBG};
+static struct log log = {NULL, "", LOG_MAX_FILE_SIZE, RTL_LOG_DEBUG};
 
 int rtl_log_open(const char *filename)
 {
@@ -42,11 +42,11 @@ static int log_level_string(int log_level, char *buf)
 	int pos = 0;
 
 	switch (log_level) {
-	case RTL_LOG_ERRO:
+	case RTL_LOG_ERR:
 		strcpy(buf, "[ERRO]");
 		pos = strlen("[ERRO]");
 		break;
-	case RTL_LOG_WARN:
+	case RTL_LOG_WARNING:
 		strcpy(buf, "[WARN]");
 		pos = strlen("[WARN]");
 		break;
@@ -54,13 +54,14 @@ static int log_level_string(int log_level, char *buf)
 		strcpy(buf, "[INFO]");
 		pos = strlen("[INFO]");
 		break;
-	case RTL_LOG_DEBG:
+	case RTL_LOG_DEBUG:
 		strcpy(buf, "[DEBG]");
 		pos = strlen("[DEBG]");
 		break;
 	default:
 		break;
 	}
+
 	return pos;
 }
 
