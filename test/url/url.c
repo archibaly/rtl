@@ -7,10 +7,7 @@ int main()
 
 	rtl_url_field_t *url = rtl_url_parse(str);
 
-	printf("schema: %s\n", url->schema);
-	printf("host: %s\n", url->host);
-	printf("port: %s\n", url->port);
-	printf("path: %s\n", url->path);
+	rtl_url_field_print(url);
 
 	rtl_url_free(url);
 

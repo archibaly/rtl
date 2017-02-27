@@ -1,30 +1,3 @@
-/* ==========================================================================
- * setproctitle.c - Linux/Darwin setproctitle.
- * --------------------------------------------------------------------------
- * Copyright (C) 2010  William Ahern
- * Copyright (C) 2013  Salvatore Sanfilippo
- * Copyright (C) 2013  Stam He
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to permit
- * persons to whom the Software is furnished to do so, subject to the
- * following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
- * NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
- * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
- * USE OR OTHER DEALINGS IN THE SOFTWARE.
- * ==========================================================================
- */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -55,7 +28,7 @@ static struct {
 	char *nul;
 	_Bool reset;
 	int error;
-} SPT;
+} spt;
 
 
 #ifndef SPT_MIN
@@ -179,10 +152,8 @@ void rtl_spt_init(int argc, char *argv[])
 		end = envp[i] + strlen(envp[i]) + 1;
 	}
 
-	if (!(SPT.arg0 = strdup(argv[0])))
+	if (!(spt.arg0 = strdup(argv[0])))
 		goto syerr;
-
-
 
 	if ((error = spt_copyenv(envp)))
 		goto error;
@@ -190,15 +161,15 @@ void rtl_spt_init(int argc, char *argv[])
 	if ((error = spt_copyargs(argc, argv)))
 		goto error;
 
-	SPT.nul  = nul;
-	SPT.base = base;
-	SPT.end  = end;
+	spt.nul  = nul;
+	spt.base = base;
+	spt.end  = end;
 
 	return;
 syerr:
 	error = errno;
 error:
-	SPT.error = error;
+	spt.error = error;
 }
 
 
@@ -206,14 +177,14 @@ error:
 #define SPT_MAXTITLE 255
 #endif
 
-void rtl_setproctitle(const char *fmt, ...)
+void rtl_spt(const char *fmt, ...)
 {
 	char buf[SPT_MAXTITLE + 1]; /* use buffer in case argv[0] is passed */
 	va_list ap;
 	char *nul;
 	int len, error;
 
-	if (!SPT.base)
+	if (!spt.base)
 		return;
 
 	if (fmt) {
@@ -221,7 +192,7 @@ void rtl_setproctitle(const char *fmt, ...)
 		len = vsnprintf(buf, sizeof buf, fmt, ap);
 		va_end(ap);
 	} else {
-		len = snprintf(buf, sizeof buf, "%s", SPT.arg0);
+		len = snprintf(buf, sizeof buf, "%s", spt.arg0);
 	}
 
 	if (len <= 0) {
@@ -229,27 +200,27 @@ void rtl_setproctitle(const char *fmt, ...)
 		goto error;
 	}
 
-	if (!SPT.reset) {
-		memset(SPT.base, 0, SPT.end - SPT.base);
-		SPT.reset = 1;
+	if (!spt.reset) {
+		memset(spt.base, 0, spt.end - spt.base);
+		spt.reset = 1;
 	} else {
-		memset(SPT.base, 0, spt_min(sizeof buf, SPT.end - SPT.base));
+		memset(spt.base, 0, spt_min(sizeof buf, spt.end - spt.base));
 	}
 
-	len = spt_min(len, spt_min(sizeof buf, SPT.end - SPT.base) - 1);
-	memcpy(SPT.base, buf, len);
-	nul = &SPT.base[len];
+	len = spt_min(len, spt_min(sizeof buf, spt.end - spt.base) - 1);
+	memcpy(spt.base, buf, len);
+	nul = &spt.base[len];
 
-	if (nul < SPT.nul) {
-		*SPT.nul = '.';
-	} else if (nul == SPT.nul && &nul[1] < SPT.end) {
-		*SPT.nul = ' ';
+	if (nul < spt.nul) {
+		*spt.nul = '.';
+	} else if (nul == spt.nul && &nul[1] < spt.end) {
+		*spt.nul = ' ';
 		*++nul = '\0';
 	}
 
 	return;
 error:
-	SPT.error = error;
+	spt.error = error;
 }
 
 #endif /* __linux || __APPLE__ */
