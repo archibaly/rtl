@@ -177,7 +177,7 @@ error:
 #define SPT_MAXTITLE 255
 #endif
 
-void rtl_spt(const char *fmt, ...)
+void rtl_setproctitle(const char *fmt, ...)
 {
 	char buf[SPT_MAXTITLE + 1]; /* use buffer in case argv[0] is passed */
 	va_list ap;

@@ -5,7 +5,7 @@
 int main(int argc, char **argv)
 {
 	rtl_spt_init(argc, argv);
-	rtl_spt("spt_test");
+	rtl_setproctitle("spt_test");
 	pause();
 	return 0;
 }
