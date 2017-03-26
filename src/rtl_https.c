@@ -4,7 +4,6 @@
 
 #include "rtl_http.h"
 #include "rtl_https.h"
-#include "rtl_socket.h"
 
 static int ssl_writen(SSL *ssl, const void *buf, int num)
 {
@@ -38,11 +37,11 @@ int rtl_https_send_get_request(struct ssl *ssl, const char *path,
 	if (!(ssl->ssl = SSL_new(ssl->ctx)))
 		goto free_ssl_ctx;
 
-	ssl->sockfd = rtl_socket_connect(host, port);
-	if (ssl->sockfd < 0)
+	ssl->sc = rtl_socket_tcp_connect(host, port);
+	if (!ssl->sc)
 		goto free_ssl;
 
-	if (SSL_set_fd(ssl->ssl, ssl->sockfd) == 0)
+	if (SSL_set_fd(ssl->ssl, ssl->sc->fd) == 0)
 		goto free_sockfd;
 
 	if (SSL_connect(ssl->ssl) != 1)
@@ -56,7 +55,7 @@ int rtl_https_send_get_request(struct ssl *ssl, const char *path,
 free_all:
 	SSL_shutdown(ssl->ssl);
 free_sockfd:
-	close(ssl->sockfd);
+	rtl_socket_connection_close(ssl->sc);
 free_ssl:
 	SSL_free(ssl->ssl);
 free_ssl_ctx:
@@ -82,11 +81,11 @@ int rtl_https_send_post_request(struct ssl *ssl, const char *path,
 	if (!(ssl->ssl = SSL_new(ssl->ctx)))
 		goto free_ssl_ctx;
 
-	ssl->sockfd = rtl_socket_connect(host, port);
-	if (ssl->sockfd < 0)
+	ssl->sc = rtl_socket_tcp_connect(host, port);
+	if (!ssl->sc)
 		goto free_ssl;
 
-	if (SSL_set_fd(ssl->ssl, ssl->sockfd) == 0)
+	if (SSL_set_fd(ssl->ssl, ssl->sc->fd) == 0)
 		goto free_sockfd;
 
 	if (SSL_connect(ssl->ssl) != 1)
@@ -98,12 +97,12 @@ int rtl_https_send_post_request(struct ssl *ssl, const char *path,
 	if (ssl_writen(ssl->ssl, body, body_len) < 0)
 		goto free_all;
 
-	return -1;
+	return 0;
 
 free_all:
 	SSL_shutdown(ssl->ssl);
 free_sockfd:
-	close(ssl->sockfd);
+	rtl_socket_connection_close(ssl->sc);
 free_ssl:
 	SSL_free(ssl->ssl);
 free_ssl_ctx:
@@ -132,7 +131,7 @@ int rtl_https_recv_response(struct ssl *ssl, uint8_t *resp, size_t size)
 
 out:
 	SSL_shutdown(ssl->ssl);
-	close(ssl->sockfd);
+	rtl_socket_connection_close(ssl->sc);
 	SSL_free(ssl->ssl);
 	SSL_CTX_free(ssl->ctx);
 
@@ -174,7 +173,7 @@ out:
 	if (fp != NULL)
 		fclose(fp);
 	SSL_shutdown(ssl->ssl);
-	close(ssl->sockfd);
+	rtl_socket_connection_close(ssl->sc);
 	SSL_free(ssl->ssl);
 	SSL_CTX_free(ssl->ctx);
 
@@ -184,7 +183,7 @@ out:
 void rtl_https_end_request(struct ssl *ssl)
 {
 	SSL_shutdown(ssl->ssl);
-	close(ssl->sockfd);
+	rtl_socket_connection_close(ssl->sc);
 	SSL_free(ssl->ssl);
 	SSL_CTX_free(ssl->ctx);
 }

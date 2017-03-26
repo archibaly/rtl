@@ -13,11 +13,11 @@
 static int wget_http(const char *filename, const char *path, const char *host,
 					 int port)
 {
-	int sockfd = rtl_http_send_get_request(path, host, port);
-	if (sockfd < 0)
+	struct rtl_socket_connection *sc = rtl_http_send_get_request(path, host, port);
+	if (!sc)
 		return -1;
 
-	return rtl_http_save_body_to_file(sockfd, filename);
+	return rtl_http_save_body_to_file(sc, filename);
 }
 
 static int wget_https(const char *filename, const char *path, const char *host,

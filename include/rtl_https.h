@@ -6,10 +6,12 @@
 #include <openssl/rand.h>
 #include <openssl/crypto.h>
 
+#include "rtl_socket.h"
+
 struct ssl {
-	int sockfd;
 	SSL *ssl;
 	SSL_CTX *ctx;
+	struct rtl_socket_connection *sc;
 };
 
 int rtl_https_send_get_request(struct ssl *ssl, const char *path,
