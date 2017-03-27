@@ -295,9 +295,9 @@ void rtl_md5_final(rtl_md5_ctx *ctx, unsigned char *result)
 int rtl_md5_string(const char *str, char *result, size_t size)
 {
 	rtl_md5_ctx ctx;
-	unsigned char md5[16];
+	unsigned char md5[RTL_MD5_BLOCK_SIZE];
 
-	if (size < 33)  /* must >= 33 */
+	if (size < RTL_MD5_BLOCK_SIZE * 2 + 1)
 		return -1;
 
 	rtl_md5_init(&ctx);
@@ -305,7 +305,7 @@ int rtl_md5_string(const char *str, char *result, size_t size)
 	rtl_md5_final(&ctx, md5);
 
 	int i;
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < RTL_MD5_BLOCK_SIZE; i++)
 		sprintf(result + i * 2, "%02x", md5[i]);
 
 	return 0;
@@ -318,27 +318,27 @@ int rtl_md5_string(const char *str, char *result, size_t size)
  */
 int rtl_md5_file(const char *filename, char *result, size_t size)
 {
-	int i;
-	int len;
-	FILE *fp;
 	rtl_md5_ctx ctx;
-	unsigned char buffer[1024];
-	unsigned char md5[16];
+	unsigned char buffer[4096];
+	unsigned char md5[RTL_MD5_BLOCK_SIZE];
 
-	if (size < 33)	/* must >= 33 */
+	if (size < RTL_MD5_BLOCK_SIZE * 2 + 1)
 		return -1;
 
+	FILE *fp;
 	if ((fp = fopen(filename, "rb")) == NULL)
 		return -1;
 
 	rtl_md5_init(&ctx);
 
-	while ((len = fread(buffer, 1, 1024, fp)) > 0)
+	int len;
+	while ((len = fread(buffer, 1, sizeof(buffer), fp)) > 0)
 		rtl_md5_update(&ctx, buffer, len);
 
 	rtl_md5_final(&ctx, md5);
 
-	for (i = 0; i < 16; i++)
+	int i;
+	for (i = 0; i < RTL_MD5_BLOCK_SIZE; i++)
 		sprintf(result + i * 2, "%02x", md5[i]);
 
 	fclose(fp);

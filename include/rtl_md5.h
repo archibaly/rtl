@@ -28,6 +28,8 @@
 
 #include <stdint.h>
 
+#define RTL_MD5_BLOCK_SIZE	16	/* MD5 outputs a 16 byte digest */
+
 typedef struct {
 	uint32_t lo, hi;
 	uint32_t a, b, c, d;
