@@ -4,7 +4,6 @@
 #include <ctype.h>
 
 #include "rtl_url.h"
-#include "rtl_kmp.h"
 
 static char *str_hosttype[] = {"host ipv4", "host ipv6", "host domain", NULL};
 static char hex[] = "0123456789ABCDEF";
@@ -224,27 +223,18 @@ void rtl_url_field_print(rtl_url_field_t *url)
 		fprintf(stdout, "  - fragment: '%s'\n", url->fragment);
 }
 
-char *rtl_get_file_name_from_url(const char *url)
+char *rtl_url_get_file_name(const char *url)
 {
-	int pos = 0;
+	const char *find;
 	const char *p = url;
 
-	if (url == NULL)
-		return NULL;
-
-	for (;;) {
-		p += pos;
-		pos = rtl_kmp(p, "/");
-		if (pos >= 0)
-			pos++;
-		else
+	for (find = p; find ; p = find, p++) {
+		find = strstr(p, "/");
+		if (!find)
 			break;
 	}
 
-	if (p[0] == '\0')
-		return NULL;
-	else
-		return (char *)p;
+	return (char *)p;
 }
 
 static char from_hex(char ch)
