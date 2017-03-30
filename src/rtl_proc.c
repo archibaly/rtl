@@ -9,7 +9,7 @@
 int rtl_last_proc;
 int rtl_proc_slot;
 
-rtl_proc_t rtl_rtl_processes[RTL_MAX_PROCESSES];
+rtl_proc_t rtl_processes[RTL_MAX_PROCESSES];
 
 int rtl_proc_spawn(rtl_spawn_proc_pt proc, void *args, char *name, int respawn)
 {
@@ -19,7 +19,7 @@ int rtl_proc_spawn(rtl_spawn_proc_pt proc, void *args, char *name, int respawn)
 	void *args_tmp = args;
 
 	for (s = 0; s < rtl_last_proc; s++) {
-		if (rtl_rtl_processes[s].pid == -1) {	/* must exited */
+		if (rtl_processes[s].pid == -1) {	/* must exited */
 			proc_tmp = rtl_processes[s].proc;
 			args_tmp = rtl_processes[s].args;
 			break;
