@@ -185,8 +185,16 @@ rtl_mutex_cond_t *rtl_mutex_cond_init(void)
 		fprintf(stderr, "malloc pthread_cond_t failed:%d\n", errno);
 		return NULL;
 	}
+	/* use monotonic timer */
+	pthread_condattr_t attr;
+	pthread_condattr_init(&attr);
+	if (pthread_condattr_setclock(&attr, CLOCK_MONOTONIC) != 0) {
+		free(cond);
+		return NULL;
+	}
 	/* never return an error code */
-	pthread_cond_init(cond, NULL);
+	pthread_cond_init(cond, &attr);
+	pthread_condattr_destroy(&attr);
 	return cond;
 }
 
@@ -224,7 +232,7 @@ int rtl_mutex_cond_wait(rtl_mutex_lock_t *mutexp, rtl_mutex_cond_t *condp, int64
 		pthread_cond_wait(cond, mutex);
 	} else {
 		struct timespec ts;
-		clock_gettime(CLOCK_REALTIME, &ts);
+		clock_gettime(CLOCK_MONOTONIC, &ts);
 		uint64_t ns = ts.tv_sec * 1000 * 1000 * 1000 + ts.tv_nsec;
 		ns += ms * 1000 * 1000;
 		ts.tv_sec = ns / (1000 * 1000 * 1000);
@@ -234,8 +242,6 @@ wait:
 		if (ret != 0) {
 			switch (ret) {
 				case ETIMEDOUT:
-					fprintf(stderr, "the condition variable was not signaled "
-							"until the timeout specified by abstime.\n");
 					break;
 				case EINTR:
 					fprintf(stderr, "pthread_cond_timedwait was interrupted by a signal.\n");
