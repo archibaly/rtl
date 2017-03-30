@@ -16,7 +16,7 @@ typedef struct {
 } rtl_proc_t;
 
 int rtl_proc_spawn(rtl_spawn_proc_pt proc, void *args, char *name, int respawn);
-void proc_wait(void);
+void rtl_proc_wait(void);
 
 extern int rtl_last_proc;
 extern int rtl_proc_slot;
