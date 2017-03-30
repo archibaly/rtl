@@ -111,7 +111,8 @@ struct rtl_file *rtl_file_open(const char *path, rtl_file_open_mode_t mode)
 
 void rtl_file_close(struct rtl_file *file)
 {
-	return file->ops->close(file->fd);
+	file->ops->close(file->fd);
+	free(file);
 }
 
 ssize_t rtl_file_read(struct rtl_file *file, void *data, size_t size)
@@ -166,6 +167,7 @@ struct iovec *rtl_file_dump(const char *path)
 	buf->iov_base = calloc(1, buf->iov_len);
 	if (!buf->iov_base) {
 		fprintf(stderr, "malloc failed!\n");
+		free(buf);
 		return NULL;
 	}
 
