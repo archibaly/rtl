@@ -225,16 +225,13 @@ void rtl_url_field_print(rtl_url_field_t *url)
 
 char *rtl_url_get_file_name(const char *url)
 {
-	const char *find;
 	const char *p = url;
+	const char *find, *tmp = NULL;
 
-	for (find = p; find ; p = find, p++) {
+	for (find = p; find; tmp = p, p = find, p++)
 		find = strstr(p, "/");
-		if (!find)
-			break;
-	}
 
-	return (char *)p;
+	return (char *)tmp;
 }
 
 static char from_hex(char ch)
