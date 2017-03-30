@@ -34,7 +34,7 @@ static struct rtl_socket_connection *_rtl_socket_connect(int type,
 		return NULL;
 	}
 	sc = calloc(1, sizeof(struct rtl_socket_connection));
-	if (sc == NULL) {
+	if (!sc) {
 		fprintf(stderr, "malloc failed!\n");
 		return NULL;
 	}
@@ -222,7 +222,6 @@ int rtl_socket_get_local_list(rtl_socket_addr_list_t **al, int loopback)
 	ap = NULL;
 	*al = NULL;
 	for (ifa = ifs; ifa != NULL; ifa = ifa->ifa_next) {
-
 		char saddr[MAX_ADDR_LEN] = "";
 		if (!(ifa->ifa_flags & IFF_UP))
 			continue;
@@ -253,7 +252,9 @@ int rtl_socket_get_local_list(rtl_socket_addr_list_t **al, int loopback)
 			continue;
 
 		an = (rtl_socket_addr_list_t *)calloc(sizeof(rtl_socket_addr_list_t), 1);
-		an->addr.ip = ((struct sockaddr_in *) ifa->ifa_addr)->sin_addr.s_addr;
+		if (!an)
+			break;
+		an->addr.ip = ((struct sockaddr_in *)ifa->ifa_addr)->sin_addr.s_addr;
 		an->addr.port = 0;
 		an->next = NULL;
 		if (*al == NULL) {
@@ -355,6 +356,8 @@ int rtl_socket_getaddrinfo(rtl_socket_addr_list_t **al, const char *domain, cons
 	*al = NULL;
 	for (rp = ai_list; rp != NULL; rp = rp->ai_next ) {
 		an = (rtl_socket_addr_list_t *)calloc(sizeof(rtl_socket_addr_list_t), 1);
+		if (!an)
+			break;
 		an->addr.ip = ((struct sockaddr_in *)rp->ai_addr)->sin_addr.s_addr;
 		an->addr.port = ntohs(((struct sockaddr_in *)rp->ai_addr)->sin_port);
 		an->next = NULL;
@@ -393,6 +396,8 @@ int rtl_socket_gethostbyname(rtl_socket_addr_list_t **al, const char *name)
 	ap = *al = NULL;
 	for (p = host->h_addr_list; *p != NULL; p++) {
 		an = (rtl_socket_addr_list_t *)calloc(sizeof(rtl_socket_addr_list_t), 1);
+		if (!an)
+			break;
 		an->addr.ip = ((struct in_addr*)(*p))->s_addr;
 		an->addr.port = 0;
 		an->next = NULL;

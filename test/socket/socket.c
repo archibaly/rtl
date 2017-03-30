@@ -91,6 +91,7 @@ int main(int argc, char **argv)
         return -1;
     }
     rtl_event_base_loop(event_base);
+	rtl_event_del(event_base, event);
 	rtl_event_base_destroy(event_base);
 
     return 0;

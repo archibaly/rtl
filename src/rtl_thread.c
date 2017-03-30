@@ -22,7 +22,7 @@ rtl_thread_t *rtl_thread_create(void *(*func)(rtl_thread_t *),
 	rtl_thread_t *t = calloc(1, sizeof(rtl_thread_t));
 	if (!t) {
 		fprintf(stderr, "calloc rtl_thread_t failed(%d): %s\n", errno, strerror(errno));
-		goto err;
+		return NULL;
 	}
 	if (!(t->spin = rtl_spin_lock_init())) {
 		fprintf(stderr, "rtl_spin_lock_init failed\n");
@@ -44,8 +44,9 @@ rtl_thread_t *rtl_thread_create(void *(*func)(rtl_thread_t *),
 	strncpy(t->name, name, sizeof(t->name) - 1);
 	t->args = args;
 	t->func = func;
-	if (0 != pthread_create(&t->tid, NULL, __thread_func, t)) {
-		fprintf(stderr, "pthread_create failed(%d): %s\n", errno, strerror(errno));
+	int ret = pthread_create(&t->tid, NULL, __thread_func, t);
+	if (ret != 0) {
+		fprintf(stderr, "pthread_create failed(%d): %s\n", ret, strerror(ret));
 		goto err;
 	}
 	return t;

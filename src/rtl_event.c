@@ -112,6 +112,7 @@ struct rtl_event *rtl_event_create(int fd,
 	struct rtl_event_cbs *evcb = calloc(1, sizeof(struct rtl_event_cbs));
 	if (!evcb) {
 		fprintf(stderr, "calloc rtl_event failed!\n");
+		free(e);
 		return NULL;
 	}
 	evcb->ev_in = ev_in;

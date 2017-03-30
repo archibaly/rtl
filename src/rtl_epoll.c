@@ -38,6 +38,7 @@ static void *epoll_init(void)
 	ec->events = calloc(EPOLL_MAX_NEVENT, sizeof(struct epoll_event));
 	if (!ec->events) {
 		perror("calloc");
+		free(ec);
 		goto err;
 	}
 	return ec;
