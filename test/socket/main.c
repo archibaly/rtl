@@ -14,14 +14,13 @@ static void on_read(int fd, void *args)
 	for (;;) {
 		n = rtl_socket_recv(fd, buf, sizeof(buf));
 		if (n < 0) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
-				printf("read done");
-			else
-				printf("received failed\n");
+			printf("received failed\n");
 			break;
 		} else if (n == 0) {
-			printf("EOF\n");
-			break;
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+				printf("recv done\n");
+				break;
+			}
 		} else {
 			buf[n] = '\0';
 			printf("received: %s\n", buf);
