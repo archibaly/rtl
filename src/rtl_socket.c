@@ -14,7 +14,6 @@
 #include <ifaddrs.h>
 
 #include "rtl_socket.h"
-#include "rtl_debug.h"
 
 #define MTU					(1500 - 42 - 200)
 #define MAX_RETRY_CNT		3
@@ -407,14 +406,6 @@ int rtl_socket_gethostbyname(rtl_socket_addr_list_t **al, const char *name)
 			return -1;
 		}
 	}
-#ifdef DEBUG
-	rtl_debug("hostname: %s", host->h_name);
-
-	for (p = host->h_aliases; *p != NULL; p++) {
-		rtl_debug("alias: %s", *p);
-	}
-#endif
-
 	return 0;
 }
 
