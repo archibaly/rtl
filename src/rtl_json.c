@@ -16,7 +16,7 @@ const char *rtl_rtl_json_get_error_ptr(void)
 }
 
 /* internal constructor. */
-static rtl_json_t *rtl_json_new_item(void)
+static rtl_json_t *json_new_item(void)
 {
 	rtl_json_t *node = (rtl_json_t *) malloc(sizeof(rtl_json_t));
 	if (node)
@@ -434,7 +434,7 @@ rtl_json_t *rtl_json_parse_with_opts(const char *value, const char **return_pars
 						   int require_null_terminated)
 {
 	const char *end = 0;
-	rtl_json_t *c = rtl_json_new_item();
+	rtl_json_t *c = json_new_item();
 	ep = 0;
 	if (!c)
 		return 0;				/* memory fail */
@@ -600,7 +600,7 @@ static const char *parse_array(rtl_json_t *item, const char *value)
 	if (*value == ']')
 		return value + 1;		/* empty array. */
 
-	item->child = child = rtl_json_new_item();
+	item->child = child = json_new_item();
 	if (!item->child)
 		return 0;				/* memory fail */
 	value = skip(parse_value(child, skip(value)));	/* skip any spacing, get the value. */
@@ -609,7 +609,7 @@ static const char *parse_array(rtl_json_t *item, const char *value)
 
 	while (*value == ',') {
 		rtl_json_t *new_item;
-		if (!(new_item = rtl_json_new_item()))
+		if (!(new_item = json_new_item()))
 			return 0;			/* memory fail */
 		child->next = new_item;
 		new_item->prev = child;
@@ -751,7 +751,7 @@ static const char *parse_object(rtl_json_t *item, const char *value)
 	if (*value == '}')
 		return value + 1;		/* empty array. */
 
-	item->child = child = rtl_json_new_item();
+	item->child = child = json_new_item();
 	if (!item->child)
 		return 0;
 	value = skip(parse_string(child, skip(value)));
@@ -769,7 +769,7 @@ static const char *parse_object(rtl_json_t *item, const char *value)
 
 	while (*value == ',') {
 		rtl_json_t *new_item;
-		if (!(new_item = rtl_json_new_item()))
+		if (!(new_item = json_new_item()))
 			return 0;			/* memory fail */
 		child->next = new_item;
 		new_item->prev = child;
@@ -1005,7 +1005,7 @@ static void suffix_object(rtl_json_t *prev, rtl_json_t *item)
 /* utility for handling references. */
 static rtl_json_t *create_reference(rtl_json_t *item)
 {
-	rtl_json_t *ref = rtl_json_new_item();
+	rtl_json_t *ref = json_new_item();
 	if (!ref)
 		return 0;
 	memcpy(ref, item, sizeof(rtl_json_t));
@@ -1154,7 +1154,7 @@ void rtl_json_replace_item_in_object(rtl_json_t *object, const char *string,
 /* create basic types: */
 rtl_json_t *rtl_json_create_null(void)
 {
-	rtl_json_t *item = rtl_json_new_item();
+	rtl_json_t *item = json_new_item();
 	if (item)
 		item->type = RTL_JSON_NULL;
 	return item;
@@ -1162,7 +1162,7 @@ rtl_json_t *rtl_json_create_null(void)
 
 rtl_json_t *rtl_json_create_true(void)
 {
-	rtl_json_t *item = rtl_json_new_item();
+	rtl_json_t *item = json_new_item();
 	if (item)
 		item->type = RTL_JSON_TRUE;
 	return item;
@@ -1170,7 +1170,7 @@ rtl_json_t *rtl_json_create_true(void)
 
 rtl_json_t *rtl_json_create_false(void)
 {
-	rtl_json_t *item = rtl_json_new_item();
+	rtl_json_t *item = json_new_item();
 	if (item)
 		item->type = RTL_JSON_FALSE;
 	return item;
@@ -1178,7 +1178,7 @@ rtl_json_t *rtl_json_create_false(void)
 
 rtl_json_t *rtl_json_create_bool(int b)
 {
-	rtl_json_t *item = rtl_json_new_item();
+	rtl_json_t *item = json_new_item();
 	if (item)
 		item->type = b ? RTL_JSON_TRUE : RTL_JSON_FALSE;
 	return item;
@@ -1186,7 +1186,7 @@ rtl_json_t *rtl_json_create_bool(int b)
 
 rtl_json_t *rtl_json_create_number(double num)
 {
-	rtl_json_t *item = rtl_json_new_item();
+	rtl_json_t *item = json_new_item();
 	if (item) {
 		item->type = RTL_JSON_NUMBER;
 		item->valuedouble = num;
@@ -1197,7 +1197,7 @@ rtl_json_t *rtl_json_create_number(double num)
 
 rtl_json_t *rtl_json_create_string(const char *string)
 {
-	rtl_json_t *item = rtl_json_new_item();
+	rtl_json_t *item = json_new_item();
 	if (item) {
 		item->type = RTL_JSON_STRING;
 		item->valuestring = strdup(string);
@@ -1207,7 +1207,7 @@ rtl_json_t *rtl_json_create_string(const char *string)
 
 rtl_json_t *rtl_json_create_array(void)
 {
-	rtl_json_t *item = rtl_json_new_item();
+	rtl_json_t *item = json_new_item();
 	if (item)
 		item->type = RTL_JSON_ARRAY;
 	return item;
@@ -1215,7 +1215,7 @@ rtl_json_t *rtl_json_create_array(void)
 
 rtl_json_t *rtl_json_create_object(void)
 {
-	rtl_json_t *item = rtl_json_new_item();
+	rtl_json_t *item = json_new_item();
 	if (item)
 		item->type = RTL_JSON_OBJECT;
 	return item;
@@ -1290,7 +1290,7 @@ rtl_json_t *rtl_json_duplicate(rtl_json_t *item, int recurse)
 	if (!item)
 		return 0;
 	/* create new item */
-	newitem = rtl_json_new_item();
+	newitem = json_new_item();
 	if (!newitem)
 		return 0;
 	/* copy over all vars */
