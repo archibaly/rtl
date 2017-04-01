@@ -116,7 +116,7 @@ int rtl_http_recv_response(struct rtl_socket_connection *sc, uint8_t *resp, size
 {
 	int n;
 
-	n = rtl_socket_recv(sc->fd, resp, size);
+	n = rtl_socket_recvn(sc->fd, resp, size);
 	rtl_socket_connection_close(sc);
 
 	return n;
@@ -133,7 +133,7 @@ int rtl_http_save_body_to_file(struct rtl_socket_connection *sc, const char *fil
 	}
 
 	int ret = -1;
-	int n = recv(sc->fd, buff, sizeof(buff), 0);
+	int n = rtl_socket_recv(sc->fd, buff, sizeof(buff));
 	if (n < 0)
 		goto out;
 
@@ -142,7 +142,7 @@ int rtl_http_save_body_to_file(struct rtl_socket_connection *sc, const char *fil
 		goto out;
 
 	for (;;) {
-		n = recv(sc->fd, buff, sizeof(buff), 0);
+		n = rtl_socket_recv(sc->fd, buff, sizeof(buff));
 		if (n > 0) {
 			if (fwrite(buff, sizeof(uint8_t), n, fp) != n)
 				goto out;

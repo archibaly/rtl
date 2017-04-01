@@ -122,14 +122,12 @@ static int epoll_dispatch(struct rtl_event_base *eb, struct timeval *tv)
 		int what = events[i].events;
 		struct rtl_event *e = (struct rtl_event *)events[i].data.ptr;
 
-		if (what & EPOLLRDHUP)
-			e->evcb->ev_close(e->evfd, (void *)e->evcb->args);
 		if (what & EPOLLIN)
-			e->evcb->ev_in(e->evfd, (void *)e->evcb->args);
+			e->evcb->ev_in(e, (void *)e->evcb->args);
 		if (what & EPOLLOUT)
-			e->evcb->ev_out(e->evfd, (void *)e->evcb->args);
+			e->evcb->ev_out(e, (void *)e->evcb->args);
 		if (what & EPOLLERR)
-			e->evcb->ev_err(e->evfd, (void *)e->evcb->args);
+			e->evcb->ev_err(e, (void *)e->evcb->args);
 	}
 	return 0;
 }

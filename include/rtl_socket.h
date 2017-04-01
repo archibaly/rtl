@@ -52,9 +52,11 @@ int rtl_socket_udp_bind(const char *host, uint16_t port);
 void rtl_socket_close(int fd);
 
 int rtl_socket_send(int fd, const void *buf, size_t len);
+int rtl_socket_sendn(int fd, const void *buf, size_t len);
 int rtl_socket_sendto(int fd, const char *ip, uint16_t port,
 		const void *buf, size_t len);
 int rtl_socket_recv(int fd, void *buf, size_t len);
+int rtl_socket_recvn(int fd, void *buf, size_t len);
 int rtl_socket_recvfrom(int fd, uint32_t *ip, uint16_t *port,
 		void *buf, size_t len);
 

@@ -1,10 +1,10 @@
 include ../Makefile.in
 
 EXE = socket
-CFLAGS = -Wall -I$(INCLUDE_DIR) -DDEBUG
+CFLAGS = -Wall -g -I$(INCLUDE_DIR) -DDEBUG
 LDFLAGS = $(LIBRARY_DIR)/librtl.a -lssl
 
-$(EXE): main.o
+$(EXE): socket.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
