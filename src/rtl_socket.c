@@ -84,36 +84,38 @@ static int is_ipv4(const char *str)
 	return 1;
 }
 
-
-struct rtl_socket_connection *rtl_socket_tcp_connect(const char *host, uint16_t port)
+static int get_ip(char *ip, const char *host)
 {
-	char ip[INET_ADDRSTRLEN];
 	rtl_socket_addr_list_t *list;
 
 	if (!is_ipv4(host)) {
 		if (rtl_socket_getaddrinfo(&list, host, NULL) < 0)
-			return NULL;
+			return -1;
 		rtl_socket_addr_ntop(ip, list->addr.ip);
 		rtl_socket_free_addr_list(list);
 	} else {
-		strncpy(ip, host, sizeof(INET_ADDRSTRLEN));
+		strncpy(ip, host, INET_ADDRSTRLEN);
 	}
+
+	return 0;
+}
+
+
+struct rtl_socket_connection *rtl_socket_tcp_connect(const char *host, uint16_t port)
+{
+	char ip[INET_ADDRSTRLEN];
+
+	if (get_ip(ip, host) < 0)
+		return NULL;
 	return _rtl_socket_connect(SOCK_STREAM, ip, port);
 }
 
 struct rtl_socket_connection *rtl_socket_udp_connect(const char *host, uint16_t port)
 {
 	char ip[INET_ADDRSTRLEN];
-	rtl_socket_addr_list_t *list;
 
-	if (!is_ipv4(host)) {
-		if (rtl_socket_getaddrinfo(&list, host, NULL) < 0)
-			return NULL;
-		rtl_socket_addr_ntop(ip, list->addr.ip);
-		rtl_socket_free_addr_list(list);
-	} else {
-		strncpy(ip, host, sizeof(INET_ADDRSTRLEN));
-	}
+	if (get_ip(ip, host) < 0)
+		return NULL;
 	return _rtl_socket_connect(SOCK_DGRAM, ip, port);
 }
 
