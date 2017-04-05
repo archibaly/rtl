@@ -6,14 +6,14 @@
 #define RTL_HASH_KEY_TYPE_INT	1
 #define RTL_HASH_KEY_TYPE_STR	2
 
-#define rtl_hash_for_each_entry(pos, head) hlist_for_each_entry(pos, head, node)
-#define rtl_hash_for_each_entry_safe(pos, n, head) hlist_for_each_entry_safe(pos, n, head, node)
-#define rtl_hash_head hlist_head
+#define rtl_hash_for_each_entry(pos, head) rtl_hlist_for_each_entry(pos, head, node)
+#define rtl_hash_for_each_entry_safe(pos, n, head) rtl_hlist_for_each_entry_safe(pos, n, head, node)
+#define rtl_hash_head rtl_hlist_head
 
 struct rtl_hash_node {
 	void *key;
 	void *value;
-	struct hlist_node node;
+	struct rtl_hlist_node node;
 };
 
 struct rtl_hash_table {

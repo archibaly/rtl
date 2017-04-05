@@ -42,7 +42,7 @@ struct rtl_hash_table *rtl_hash_init(int size, int key_type)
 	}
 
 	for (i = 0; i < table->size; i++)
-		INIT_HLIST_HEAD(table->head + i);
+		RTL_INIT_HLIST_HEAD(table->head + i);
 
 	return table;
 }
@@ -56,7 +56,7 @@ static struct rtl_hash_node *new_rtl_hash_node(void *key, void *value)
 
 	node->key = key;
 	node->value = value;
-	INIT_HLIST_NODE(&node->node);
+	rtl_hlist_node_init(&node->node);
 
 	return node;
 }
@@ -77,7 +77,7 @@ int rtl_hash_add(struct rtl_hash_table *table, void *key, void *value)
 	if (!(node = new_rtl_hash_node(key, value)))
 		return -1;
 
-	hlist_add_head(&node->node, table->head + offset);
+	rtl_hlist_add_head(&node->node, table->head + offset);
 
 	return 0;
 }
@@ -148,8 +148,8 @@ void rtl_hash_del(struct rtl_hash_node *node)
 	if (!node)
 		return;
 
-	if (!hlist_unhashed(&node->node))
-		hlist_del(&node->node);
+	if (!rtl_hlist_unhashed(&node->node))
+		rtl_hlist_del(&node->node);
 
 	free(node);
 }
@@ -158,7 +158,7 @@ void rtl_hash_free(struct rtl_hash_table *table)
 {
 	int i;
 	struct rtl_hash_node *pos;
-	struct hlist_node *tmp;
+	struct rtl_hlist_node *tmp;
 
 	if (!table)
 		return;
