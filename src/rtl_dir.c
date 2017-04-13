@@ -7,7 +7,7 @@
 
 #include "rtl_dir.h"
 
-int rtl_mkdir(const char *path, mode_t omode)
+int rtl_dir_create(const char *path, mode_t omode)
 {
 	if (mkdir(path, omode) < 0) {
 		if (errno == EEXIST)
@@ -86,7 +86,7 @@ int rtl_mkdir(const char *path, mode_t omode)
 	return retval;
 }
 
-int rtl_unlink(const char *name)
+int rtl_dir_remove(const char *name)
 {
 	struct stat st;
 	DIR *dir;
@@ -113,7 +113,7 @@ int rtl_unlink(const char *name)
 		if (!strcmp(de->d_name, "..") || !strcmp(de->d_name, "."))
 			continue;
 		sprintf(dn, "%s/%s", name, de->d_name);
-		if (rtl_unlink(dn) < 0) {
+		if (rtl_dir_remove(dn) < 0) {
 			fail = 1;
 			break;
 		}

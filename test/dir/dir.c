@@ -9,8 +9,13 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	if (rtl_mkdir(argv[1], 0755) < 0) {
-		perror("rtl_mkdir");
+	if (rtl_dir_create(argv[1], 0755) < 0) {
+		perror("rtl_dir_create");
+		return 1;
+	}
+
+	if (rtl_dir_remove(argv[1]) < 0) {
+		perror("rtl_dir_remove");
 		return 1;
 	}
 

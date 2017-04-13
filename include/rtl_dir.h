@@ -4,7 +4,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-int rtl_mkdir(const char *path, mode_t omode);
-int rtl_unlink(const char *name);
+int rtl_dir_create(const char *path, mode_t omode);
+int rtl_dir_remove(const char *name);
 
 #endif /* _RTL_DIR_H_ */
