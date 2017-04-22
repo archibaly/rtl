@@ -13,6 +13,97 @@
 #include "rtl_inet.h"
 #include "rtl_debug.h"
 
+#ifndef IF_NAMESIZE
+#define IF_NAMESIZE	16
+#endif
+
+static int ifctrl_get_ifreq(const char *ifname, struct ifreq *ifreq)
+{
+	int fd;
+
+	if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+		return -1;
+
+	memset(ifreq, 0, sizeof(struct ifreq));
+	strncpy(ifreq->ifr_name, ifname, IF_NAMESIZE - 1);
+
+	if (ioctl(fd, SIOCGIFFLAGS, ifreq) < 0) {
+		rtl_debug("ioctl error: %s", strerror(errno));
+		close(fd);
+		return -1;
+	}
+
+	return fd;
+}
+
+static int ifctrl_set_ifreq(int fd, struct ifreq *ifreq)
+{
+	if (ioctl(fd, SIOCSIFFLAGS, ifreq) < 0) {
+		rtl_debug("ioctl error: %s", strerror(errno));
+		close(fd);
+		return -1;
+	}
+
+	if (close(fd))
+		return -1;
+
+	return 0;
+}
+
+static int ifctrl_up(const char *ifname, int up)
+{
+	int fd;
+	struct ifreq ifreq;
+
+	fd = ifctrl_get_ifreq(ifname, &ifreq);
+	if (fd < 0)
+		return -1;
+
+	if (up)
+		ifreq.ifr_flags |= IFF_UP;
+	else
+		ifreq.ifr_flags &= ~IFF_UP;
+
+	return ifctrl_set_ifreq(fd, &ifreq);
+}
+
+static int ifctrl_promisc(const char *ifname, int promisc)
+{
+	int fd;
+	struct ifreq ifreq;
+
+	fd = ifctrl_get_ifreq(ifname, &ifreq);
+	if (fd < 0)
+		return -1;
+
+	if (promisc)
+		ifreq.ifr_flags |= IFF_PROMISC;
+	else
+		ifreq.ifr_flags &= ~IFF_PROMISC;
+
+	return ifctrl_set_ifreq(fd, &ifreq);
+}
+
+int rtl_if_up(const char *ifname)
+{
+	return ifctrl_up(ifname, 1);
+}
+
+int rtl_if_down(const char *ifname)
+{
+	return ifctrl_up(ifname, 0);
+}
+
+int rtl_enable_promisc(const char *ifname)
+{
+	return ifctrl_promisc(ifname, 1);
+}
+
+int rtl_disable_promisc(const char *ifname)
+{
+	return ifctrl_promisc(ifname, 0);
+}
+
 int rtl_get_mac(char *mac, const char *fmt, size_t size, const char *ifname)
 {
 	int sock;
