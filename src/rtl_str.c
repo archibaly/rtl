@@ -1,61 +1,86 @@
-#include <ctype.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "rtl_str.h"
-
-char *rtl_ltrim(char *s)
-{
-	char *p = s;
-	while (RTL_ISSPACE(*p))
-		p++;
-	strcpy(s, p);
-	return s;
-}
-
-char *rtl_rtrim(char *s)
-{
-	int i;
-
-	i = strlen(s) - 1;
-	while (RTL_ISSPACE(s[i]))
-		i--;
-	s[i + 1] = '\0';
-
-	return s;
-}
-
-char *rtl_trim(char *s)
-{
-	rtl_ltrim(s);
-	rtl_rtrim(s);
-	return s;
-}
 
 int rtl_streq(const char *a, const char *b)
 {
 	return strcmp(a, b) == 0 ? 1 : 0;
 }
 
-char *rtl_strlower(char *str)
+char *rtl_strltrim(char *dst, const char *src, size_t siz)
 {
-	int i;
-	int len = strlen(str);
-	for (i = 0; i < len; i++)
-		if (isupper(str[i]))
-			str[i] += 32;
-	str[len] = '\0';
-	return str;
+	const char *p = src;
+
+	if (!p)
+		return NULL;
+	while (isblank(*p))
+		p++;
+	if (rtl_strlcpy(dst, p, siz) >= siz)
+		return NULL;
+	return dst;
 }
 
-char *rtl_strupper(char *str)
+char *rtl_strrtrim(char *dst, const char *src, size_t siz)
 {
-	int i;
-	int len = strlen(str);
-	for (i = 0; i < len; i++)
-		if (islower(str[i]))
-			str[i] -= 32;
-	str[len] = '\0';
-	return str;
+	int pos, len;
+
+	if (!src)
+		return NULL;
+	pos = strlen(src) - 1;
+	while (isblank(src[pos]))
+		pos--;
+	len = pos + 1;
+	if (siz < len + 1)
+		return NULL;
+	memcpy(dst, src, len);
+	dst[len] = '\0';
+	return dst;
+}
+
+char *rtl_strtrim(char *dst, const char *src, size_t siz)
+{
+	if (rtl_strltrim(dst, src, siz) < 0)
+		return NULL;
+	return rtl_strrtrim(dst, dst, siz);
+}
+
+char *rtl_strlower(char *dst, const char *src, size_t siz)
+{
+	int i, len;
+
+	if (!src)
+		return NULL;
+	len = strlen(src);
+	if (siz < len + 1)
+		return NULL;
+	for (i = 0; i < len; i++) {
+		if (isupper(src[i]))
+			dst[i] = src[i] + 32;
+		else
+			dst[i] = src[i];
+	}
+	dst[len] = '\0';
+	return dst;
+}
+
+char *rtl_strupper(char *dst, const char *src, size_t siz)
+{
+	int i, len;
+
+	if (!src)
+		return NULL;
+	len = strlen(src);
+	if (siz < len + 1)
+		return NULL;
+	for (i = 0; i < len; i++) {
+		if (islower(src[i]))
+			dst[i] = src[i] - 32;
+		else
+			dst[i] = src[i];
+	}
+	dst[len] = '\0';
+	return dst;
 }
 
 /*
@@ -69,21 +94,55 @@ size_t rtl_strlcpy(char *dst, const char *src, size_t siz)
 	const char *s = src;
 	size_t n = siz;
 
-	/* copy as many bytes as will fit */
-	if (n != 0 && --n != 0) {
-		do {
-			if ((*d++ = *s++) == 0)
+	/* Copy as many bytes as will fit */
+	if (n != 0) {
+		while (--n != 0) {
+			if ((*d++ = *s++) == '\0')
 				break;
-		} while (--n != 0);
+		}
 	}
 
-	/* not enough room in dst, add NUL and traverse rest of src */
+	/* Not enough room in dst, add NUL and traverse rest of src */
 	if (n == 0) {
 		if (siz != 0)
-			*d = '\0';      /* NUL-terminate dst */
+			*d = '\0';		/* NUL-terminate dst */
 		while (*s++)
 			;
 	}
 
-	return s - src - 1;    /* count does not include NUL */
+	return s - src - 1;	/* count does not include NUL */
+}
+
+/*
+ * Appends src to string dst of size siz (unlike strncat, siz is the
+ * full size of dst, not space left).  At most siz-1 characters
+ * will be copied.  Always NUL terminates (unless siz <= strlen(dst)).
+ * Returns strlen(src) + MIN(siz, strlen(initial dst)).
+ * If retval >= siz, truncation occurred.
+ */
+size_t rtl_strlcat(char *dst, const char *src, size_t siz)
+{
+	char *d = dst;
+	const char *s = src;
+	size_t n = siz;
+	size_t dlen;
+
+	/* Find the end of dst and adjust bytes left but don't go past end */
+	while (n-- != 0 && *d != '\0')
+		d++;
+	dlen = d - dst;
+	n = siz - dlen;
+
+	if (n == 0)
+		return(dlen + strlen(s));
+	while (*s != '\0') {
+		if (n != 1) {
+			*d++ = *s;
+			n--;
+		}
+		s++;
+	}
+	*d = '\0';
+
+	return dlen + (s - src);	/* count does not include NUL */
 }
