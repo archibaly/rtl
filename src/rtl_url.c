@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <arpa/inet.h>
 
 #include "rtl_url.h"
 
@@ -10,17 +11,14 @@ static char hex[] = "0123456789ABCDEF";
 
 int rtl_host_is_ipv4(const char *str)
 {
-	if (!str)
-		return 0;
+	int ret;
+	struct in_addr ipv4_addr;
 
-	while (*str) {
-		if ((*str >= '0' && *str <= '9') || *str == '.')
-			str++;
-		else
-			return 0;
-	}
+	ret = inet_pton(AF_INET, str, &ipv4_addr);
 
-	return 1;
+	if (ret == 1)
+		return 1;
+	return 0;
 }
 
 static void parse_query(rtl_url_field_t *url, char *query)
