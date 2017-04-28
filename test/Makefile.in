@@ -1,3 +1,5 @@
 CC = cc
 INCLUDE_DIR = $(HOME)/c/rtl/include
 LIBRARY_DIR = $(HOME)/c/rtl/lib
+CFLAGS = -Wall -I$(INCLUDE_DIR)
+LDFLAGS = $(LIBRARY_DIR)/librtl.a

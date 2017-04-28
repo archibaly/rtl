@@ -1,43 +1,72 @@
-all:
-	make -C base64
-	make -C blowfish
-	make -C dir
-	make -C file
-	make -C hash
-	make -C http
-	make -C inet
-	make -C json
-	make -C list
-	make -C pid
-	make -C proc
-	make -C sha1
-	make -C sha256
-	make -C shm
-	make -C socket
-	make -C spt
-	make -C str
-	make -C thread
-	make -C url
-	make -C wget
+include Makefile.in
+
+EXE = base64 blowfish dir file hash http inet json \
+	list pid proc sha1 sha256 shm socket spt str thread url wget
+
+all: $(EXE)
+
+base64: base64.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+blowfish: blowfish.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+dir: dir.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+file: file.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+hash: hash.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+http: http.o
+	$(CC) -o $@ $< $(LDFLAGS) -lssl
+
+inet: inet.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+json: json.o
+	$(CC) -o $@ $< $(LDFLAGS) -lm
+
+list: list.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+pid: pid.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+proc: proc.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+sha1: sha1.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+sha256: sha256.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+shm: shm.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+socket: socket.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+spt: spt.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+str: str.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+thread: thread.o
+	$(CC) -o $@ $< $(LDFLAGS) -pthread
+
+url: url.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+wget: wget.o
+	$(CC) -o $@ $< $(LDFLAGS) -lssl
+
+%.o: %.c
+	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
-	make -C base64 clean
-	make -C blowfish clean
-	make -C dir clean
-	make -C file clean
-	make -C hash clean
-	make -C http clean
-	make -C inet clean
-	make -C json clean
-	make -C list clean
-	make -C pid clean
-	make -C proc clean
-	make -C sha1 clean
-	make -C sha256 clean
-	make -C shm clean
-	make -C socket clean
-	make -C spt clean
-	make -C str clean
-	make -C thread clean
-	make -C url clean
-	make -C wget clean
+	rm -f *.o tags $(EXE)

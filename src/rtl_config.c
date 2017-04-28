@@ -11,96 +11,52 @@
 #define END_LINE(c)			(c == '\n' || c == '\0')
 #define HASH_NUM_BUCKETS	37
 
-typedef struct {
-	char *name;
-	char *value;
-} config_opt_t;
-
 static char delim = '=';
 static char comment = '#';
 
 static struct rtl_hash_table *config_table;
 
-static config_opt_t *new_config_opt(const char *name, const char *value)
+int rtl_config_add(const char *key, const char *value)
 {
-	config_opt_t *opt;
-
-	if (!(opt = malloc(sizeof(config_opt_t))))
-		return NULL;
-
-	if (!(opt->name = strdup(name))) {
-		free(opt);
-		return NULL;
-	}
-
-	if (!(opt->value = strdup(value))) {
-		free(opt->name);
-		free(opt);
-		return NULL;
-	}
-
-	return opt;
-}
-
-static config_opt_t *config_add_opt(const char *name, const char *value)
-{
-	config_opt_t *opt;
+	int n;
+	char *k, *v;
 	struct rtl_hash_node *node;
 
-	int n = rtl_hash_find(config_table, name, &node, 1);
+	if (!config_table)
+		return -1;
+
+	k = strdup(key);
+	if (!k)
+		return -1;
+	v = strdup(value);
+	if (!v) {
+		free(k);
+		return -1;
+	}
+
+	n = rtl_hash_find(config_table, key, &node, 1);
 
 	if (n == 0) {
-		opt = new_config_opt(name, value);
-		rtl_hash_add(config_table, opt->name, opt);
+		rtl_hash_add(config_table, k, v);
 	} else {
-		opt = node->value;
+		free(node->key);
+		free(node->value);
+		node->key = k;
+		node->value = v;
 	}
 
-	return opt;
+	return 0;
 }
 
-static config_opt_t *config_get_opt(const char *name)
+char *rtl_config_get_value(const char *key)
 {
-	config_opt_t *opt;
 	struct rtl_hash_node *node;
-
-	int n = rtl_hash_find(config_table, name, &node, 1);
+	int n = rtl_hash_find(config_table, key, &node, 1);
 
 	if (n == 0)
-		opt = NULL;
+		return NULL;
 	else
-		opt = node->value;
-
-	return opt;
-}
-
-char *rtl_config_get_value(const char *name)
-{
-	char *value;
-	config_opt_t *opt;
-
-	opt = config_get_opt(name);
-
-	if (opt)
-		value = opt->value;
-	else
-		value = NULL;
-
-	return value;
-}
-
-int rtl_config_set_value(const char *name, const char *value)
-{
-	config_opt_t *opt;
-	opt = config_get_opt(name);
-	if (opt) {
-		free(opt->value);
-		if (!(opt->value = strdup(value)))
-			return -1;
-	} else {
-		config_add_opt(name, value);
-	}
-	return 0;
+		return (char *)node->value;
 }
 
 void rtl_config_set_delim(char d)
@@ -108,31 +64,17 @@ void rtl_config_set_delim(char d)
 	delim = d;
 }
 
-void rtl_config_print_opt(const char *name)
-{
-	config_opt_t *opt;
-
-	opt = config_get_opt(name);
-	if (opt == NULL) {
-		fprintf(stdout, "NULL => NULL\n");
-		return;
-	}
-
-	fprintf(stdout, "name => %s\n", opt->name);
-	fprintf(stdout, "value => %s\n", opt->value);
-}
-
 static int parse_line(char *string)
 {
-	char value[512], name[512], c;
-	int have_name, have_quote;
+	char key[512], value[512], c;
+	int have_key, have_quote;
 	int i = 0;
 
-	have_name = have_quote = 0;
+	have_key = have_quote = 0;
 
 	while ((c = *string++) != '\0') {
 		if (c == '"') {
-			if (!have_name) {
+			if (!have_key) {
 				rtl_debug("unexpected '%c'", '"');
 				return -1;
 			}
@@ -146,27 +88,27 @@ static int parse_line(char *string)
 			if (have_quote)
 				value[i++] = c;
 		} else if (c == delim) {
-			if (have_name) {
+			if (have_key) {
 				rtl_debug("unexpected '%c'", delim);
 				return -1;
 			}
-			have_name = 1;
-			name[i] = '\0';
+			have_key = 1;
+			key[i] = '\0';
 			i = 0;
 		} else if (c == '\n') {
 			break;
 		} else {
-			if (have_name)
+			if (have_key)
 				value[i++] = c;
 			else
-				name[i++] = c;
+				key[i++] = c;
 		}
 	}
 
 	value[i] = '\0';
 
-	if (!have_name) {
-		rtl_debug("do not have name");
+	if (!have_key) {
+		rtl_debug("do not have key");
 		return -1;
 	}
 	if (have_quote) {
@@ -174,12 +116,12 @@ static int parse_line(char *string)
 		return -1;
 	}
 
-	config_add_opt(name, value);
+	rtl_config_add(key, value);
 
 	return 0;
 }
 
-int rtl_config_load(const char *filename)
+int rtl_config_load(const char *filekey)
 {
 	FILE *fp;
 	char line[1024];
@@ -187,8 +129,10 @@ int rtl_config_load(const char *filename)
 	if (!(config_table = rtl_hash_init(HASH_NUM_BUCKETS, RTL_HASH_KEY_TYPE_STR)))
 		return -1;
 
-	if (!(fp = fopen(filename, "r")))
+	if (!(fp = fopen(filekey, "r"))) {
+		rtl_hash_free_table(config_table);
 		return -1;
+	}
 
 	while (fgets(line, sizeof(line), fp)) {
 		/* ignore lines that start with a comment or '\n' character */
@@ -215,30 +159,26 @@ static int has_space(const char *str)
 	return 0;
 }
 
-int rtl_config_save(const char *filename)
+int rtl_config_save(const char *filekey)
 {
 	FILE *fp;
 	char line[1024];
 
-	if ((fp = fopen(filename, "w")) == NULL)
+	if (!config_table)
+		return -1;
+
+	if ((fp = fopen(filekey, "w")) == NULL)
 		return -1;
 
 	int i;
 	struct rtl_hash_node *pos;
-	config_opt_t *opt;
-
-	if (!config_table) {
-		fclose(fp);
-		return -1;
-	}
 
 	for (i = 0; i < HASH_NUM_BUCKETS; i++) {
 		rtl_hash_for_each_entry(pos, config_table->head + i) {
-			opt = pos->value;
-			if (has_space(opt->value))
-				sprintf(line, "%s %c \"%s\"\n", opt->name, delim, opt->value);
+			if (has_space(pos->value))
+				sprintf(line, "%s %c \"%s\"\n", (char *)pos->key, delim, (char *)pos->value);
 			else
-				sprintf(line, "%s %c %s\n", opt->name, delim, opt->value);
+				sprintf(line, "%s %c %s\n", (char *)pos->key, delim, (char *)pos->value);
 			fputs(line, fp);
 		}
 	}
@@ -247,28 +187,11 @@ int rtl_config_save(const char *filename)
 	return 0;
 }
 
-static void config_free_opt(config_opt_t *opt)
-{
-	free(opt->value);
-	free(opt->name);
-	free(opt);
-}
-
 void rtl_config_free(void)
 {
-	int i;
-	struct rtl_hash_node *pos;
-	config_opt_t *opt;
-
-	if (!(config_table))
+	if (!config_table)
 		return;
 
-	for (i = 0; i < HASH_NUM_BUCKETS; i++) {
-		rtl_hash_for_each_entry(pos, config_table->head + i) {
-			opt = pos->value;
-			config_free_opt(opt);
-		}
-	}
-
+	rtl_hash_free_nodes(config_table);
 	rtl_hash_free_table(config_table);
 }
