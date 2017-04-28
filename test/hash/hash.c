@@ -21,7 +21,7 @@ int main()
 
 	struct rtl_hash_node *node[4];
 
-	int n = rtl_hash_find(table, "123", node, sizeof(node));
+	int n = rtl_hash_find(table, "123", node, array_size(node));
 	printf("n = %d\n", n);
 
 	int i;
@@ -32,7 +32,7 @@ int main()
 		printf("can not find\n");
 	}
 
-	rtl_hash_free(table);
+	rtl_hash_free_table(table);
 
 	table = rtl_hash_init(32, RTL_HASH_KEY_TYPE_INT);
 	if (!table)
@@ -48,7 +48,7 @@ int main()
 	rtl_hash_add(table, &key, "value3");
 
 	key = 1;
-	n = rtl_hash_find(table, &key, node, sizeof(node));
+	n = rtl_hash_find(table, &key, node, array_size(node));
 
 	if (n > 0) {
 		for (i = 0; i < n && i < array_size(node); i++)
@@ -57,7 +57,7 @@ int main()
 		printf("can not find\n");
 	}
 
-	rtl_hash_free(table);
+	rtl_hash_free_table(table);
 
 	return 0;
 }

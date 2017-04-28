@@ -154,7 +154,24 @@ void rtl_hash_del(struct rtl_hash_node *node)
 	free(node);
 }
 
-void rtl_hash_free(struct rtl_hash_table *table)
+void rtl_hash_free_nodes(struct rtl_hash_table *table)
+{
+	int i;
+	struct rtl_hash_node *pos;
+	struct rtl_hlist_node *tmp;
+
+	if (!table)
+		return;
+
+	for (i = 0; i < table->size; i++) {
+		rtl_hash_for_each_entry_safe(pos, tmp, table->head + i) {
+			free(pos->key);
+			free(pos->value);
+		}
+	}
+}
+
+void rtl_hash_free_table(struct rtl_hash_table *table)
 {
 	int i;
 	struct rtl_hash_node *pos;

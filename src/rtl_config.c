@@ -270,5 +270,5 @@ void rtl_config_free(void)
 		}
 	}
 
-	rtl_hash_free(config_table);
+	rtl_hash_free_table(config_table);
 }
