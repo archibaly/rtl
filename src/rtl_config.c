@@ -48,6 +48,19 @@ int rtl_config_add(const char *key, const char *value)
 	return 0;
 }
 
+void rtl_config_del(const char *key)
+{
+	struct rtl_hash_node *node;
+
+	if (!config_table)
+		return;
+	if (rtl_hash_find(config_table, key, &node, 1) == 0)
+		return;
+	free(node->key);
+	free(node->value);
+	rtl_hash_del(node);
+}
+
 char *rtl_config_get_value(const char *key)
 {
 	struct rtl_hash_node *node;
