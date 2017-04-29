@@ -169,7 +169,7 @@ int rtl_hash_del(struct rtl_hash_node *node)
 	return 0;
 }
 
-void rtl_hash_destroy(struct rtl_hash_table *table)
+void rtl_hash_free_nodes(struct rtl_hash_table *table)
 {
 	int i;
 	struct rtl_hash_node *pos;
@@ -180,10 +180,17 @@ void rtl_hash_destroy(struct rtl_hash_table *table)
 
 	for (i = 0; i < table->size; i++) {
 		rtl_hash_for_each_entry_safe(pos, tmp, table->head + i) {
-			rtl_hash_del(pos);
+			rtl_hlist_del(&pos->node);
+			free(pos->key);
+			free(pos->value);
+			free(pos);
 		}
 	}
+}
 
+void rtl_hash_destroy(struct rtl_hash_table *table)
+{
+	rtl_hash_free_nodes(table);
 	free(table->head);
 	free(table);
 }
