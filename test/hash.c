@@ -21,15 +21,15 @@ int main()
 	rtl_hash_add(table, "aece", sizeof("aece") , "value2", sizeof("value2"));
 	rtl_hash_add(table, "0uej", sizeof("0uej") , "value3", sizeof("value3"));
 
-	struct rtl_hash_node *node[4];
+	void *value[4];
 
-	int n = rtl_hash_find(table, "123", node, array_size(node));
+	int n = rtl_hash_find(table, "123", value, array_size(value));
 	printf("n = %d\n", n);
 
 	int i;
 	if (n > 0) {
-		for (i = 0; i < n && i < array_size(node); i++)
-			printf("node[%d]->value = %s\n", i, (char *)node[i]->value);
+		for (i = 0; i < n && i < array_size(value); i++)
+			printf("node[%d]->value = %s\n", i, (char *)value[i]);
 	} else {
 		printf("can not find\n");
 	}
@@ -50,11 +50,11 @@ int main()
 	rtl_hash_add(table, &key, sizeof(key), "value3", sizeof("value3"));
 
 	key = 1;
-	n = rtl_hash_find(table, &key, node, array_size(node));
+	n = rtl_hash_find(table, &key, value, array_size(value));
 
 	if (n > 0) {
-		for (i = 0; i < n && i < array_size(node); i++)
-			printf("node[%d]->value = %s\n", i, (char *)node[i]->value);
+		for (i = 0; i < n && i < array_size(value); i++)
+			printf("node[%d]->value = %s\n", i, (char *)value[i]);
 	} else {
 		printf("can not find\n");
 	}

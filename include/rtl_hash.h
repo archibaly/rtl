@@ -24,9 +24,8 @@ struct rtl_hash_table {
 
 struct rtl_hash_table *rtl_hash_init(int size, int key_type);
 int rtl_hash_add(struct rtl_hash_table *table, const void *key, int key_size, const void *value, int value_size);
-int rtl_hash_find(struct rtl_hash_table *table, const void *key,
-				  struct rtl_hash_node **node, size_t size);
-int rtl_hash_del(struct rtl_hash_node *node);
+int rtl_hash_find(struct rtl_hash_table *table, const void *key, void **value, size_t size);
+void rtl_hash_del(struct rtl_hash_table *table, const void *key);
 void rtl_hash_free_nodes(struct rtl_hash_table *table);
 void rtl_hash_destroy(struct rtl_hash_table *table);
 

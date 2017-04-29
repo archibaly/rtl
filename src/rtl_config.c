@@ -18,37 +18,32 @@ static struct rtl_hash_table *config_table;
 
 int rtl_config_add(const char *key, const char *value)
 {
-	int n;
-	struct rtl_hash_node *node;
+	void *v;
 
-	n = rtl_hash_find(config_table, key, &node, 1);
-
-	if (n > 0) {
-		if (rtl_hash_del(node) < 0)
-			return -1;
-	}
+	if (rtl_hash_find(config_table, key, &v, 1) > 0)
+		rtl_hash_del(config_table, key);
 
 	return rtl_hash_add(config_table, key, strlen(key) + 1, value, strlen(value) + 1);
 }
 
 void rtl_config_del(const char *key)
 {
-	struct rtl_hash_node *node;
+	void *value;
 
-	if (rtl_hash_find(config_table, key, &node, 1) == 0)
+	if (rtl_hash_find(config_table, key, &value, 1) == 0)
 		return;
-	rtl_hash_del(node);
+	rtl_hash_del(config_table, key);
 }
 
 char *rtl_config_get_value(const char *key)
 {
-	struct rtl_hash_node *node;
-	int n = rtl_hash_find(config_table, key, &node, 1);
+	void *value;
+	int n = rtl_hash_find(config_table, key, &value, 1);
 
 	if (n == 0)
 		return NULL;
 	else
-		return (char *)node->value;
+		return value;
 }
 
 void rtl_config_set_delim(char d)
