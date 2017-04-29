@@ -19,45 +19,24 @@ static struct rtl_hash_table *config_table;
 int rtl_config_add(const char *key, const char *value)
 {
 	int n;
-	char *k, *v;
 	struct rtl_hash_node *node;
-
-	if (!config_table)
-		return -1;
-
-	k = strdup(key);
-	if (!k)
-		return -1;
-	v = strdup(value);
-	if (!v) {
-		free(k);
-		return -1;
-	}
 
 	n = rtl_hash_find(config_table, key, &node, 1);
 
-	if (n == 0) {
-		rtl_hash_add(config_table, k, v);
-	} else {
-		free(node->key);
-		free(node->value);
-		node->key = k;
-		node->value = v;
+	if (n > 0) {
+		if (rtl_hash_del(node) < 0)
+			return -1;
 	}
 
-	return 0;
+	return rtl_hash_add(config_table, key, strlen(key) + 1, value, strlen(value) + 1);
 }
 
 void rtl_config_del(const char *key)
 {
 	struct rtl_hash_node *node;
 
-	if (!config_table)
-		return;
 	if (rtl_hash_find(config_table, key, &node, 1) == 0)
 		return;
-	free(node->key);
-	free(node->value);
 	rtl_hash_del(node);
 }
 
@@ -129,12 +108,10 @@ static int parse_line(char *string)
 		return -1;
 	}
 
-	rtl_config_add(key, value);
-
-	return 0;
+	return rtl_config_add(key, value);
 }
 
-int rtl_config_load(const char *filekey)
+int rtl_config_load(const char *filename)
 {
 	FILE *fp;
 	char line[1024];
@@ -142,8 +119,8 @@ int rtl_config_load(const char *filekey)
 	if (!(config_table = rtl_hash_init(HASH_NUM_BUCKETS, RTL_HASH_KEY_TYPE_STR)))
 		return -1;
 
-	if (!(fp = fopen(filekey, "r"))) {
-		rtl_hash_free_table(config_table);
+	if (!(fp = fopen(filename, "r"))) {
+		rtl_hash_destroy(config_table);
 		return -1;
 	}
 
@@ -154,6 +131,7 @@ int rtl_config_load(const char *filekey)
 
 		if (parse_line(line) < 0) {
 			fclose(fp);
+			rtl_hash_destroy(config_table);
 			return -1;
 		}
 	}
@@ -172,7 +150,7 @@ static int has_space(const char *str)
 	return 0;
 }
 
-int rtl_config_save(const char *filekey)
+int rtl_config_save(const char *filename)
 {
 	FILE *fp;
 	char line[1024];
@@ -180,7 +158,7 @@ int rtl_config_save(const char *filekey)
 	if (!config_table)
 		return -1;
 
-	if ((fp = fopen(filekey, "w")) == NULL)
+	if ((fp = fopen(filename, "w")) == NULL)
 		return -1;
 
 	int i;
@@ -202,9 +180,6 @@ int rtl_config_save(const char *filekey)
 
 void rtl_config_free(void)
 {
-	if (!config_table)
-		return;
-
-	rtl_hash_free_nodes(config_table);
-	rtl_hash_free_table(config_table);
+	rtl_hash_destroy(config_table);
+	config_table = NULL;
 }
