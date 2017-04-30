@@ -1,7 +1,8 @@
 include Makefile.in
 
 EXE = base64 blowfish dir file hash http inet json \
-	list pid proc sha1 sha256 shm socket spt str thread url wget
+	list pid proc sha1 sha256 shm socket spt str thread url wget \
+	fcgi
 
 all: $(EXE)
 
@@ -64,6 +65,9 @@ url: url.o
 
 wget: wget.o
 	$(CC) -o $@ $< $(LDFLAGS) -lssl
+
+fcgi: fcgi.o
+	$(CC) -o $@ $< $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
