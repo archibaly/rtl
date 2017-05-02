@@ -101,11 +101,11 @@ void rtl_log_write(int level, const char *fmt, ...)
 
 	char now[32];
 	rtl_time_fmt(now, sizeof(now), "%Y/%m/%d %H:%M:%S");
-	sprintf(log_buf + pos, "[%s] ", now);
+	snprintf(log_buf + pos, sizeof(log_buf) - pos, "[%s] ", now);
 	pos = strlen(log_buf);
 
 	va_start(args, fmt);
-	vsnprintf(log_buf + pos, sizeof(log_buf) - 1, fmt, args);
+	vsnprintf(log_buf + pos, sizeof(log_buf) - pos - 1, fmt, args);
 	va_end(args);
 
 	strcat(log_buf, "\n");

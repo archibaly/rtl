@@ -265,15 +265,7 @@ int rtl_fcgi_read_request(rtl_fcgi_t *fcgi)
 		if (rtl_readn(fcgi->conn_sock, buf, len + padding) != len + padding)
 			return -1;
 		b = (fcgi_begin_request_t *)buf;
-#if 0
-		fcgi->keep = (b->flags & FCGI_KEEP_CONN);
-		if (fcgi->keep && req->tcp && !req->nodelay) {
-			int on = 1;
 
-			setsockopt(req->fd, IPPROTO_TCP, TCP_NODELAY, (char*)&on, sizeof(on));
-			req->nodelay = 1;
-		}
-#endif
 		switch ((b->roleB1 << 8) + b->roleB0) {
 			case RTL_FCGI_RESPONDER:
 				rtl_hash_add(fcgi->env, "FCGI_ROLE", sizeof("FCGI_ROLE"), "RESPONDER", sizeof("RESPONDER"));
@@ -298,17 +290,12 @@ int rtl_fcgi_read_request(rtl_fcgi_t *fcgi)
 		while (hdr.type == RTL_FCGI_PARAMS && len > 0) {
 			if (len + padding > RTL_FCGI_MAX_LENGTH)
 				return -1;
-			if (rtl_readn(fcgi->conn_sock, buf, len + padding) != len + padding) {
-				/* req->keep = 0; */
+			if (rtl_readn(fcgi->conn_sock, buf, len + padding) != len + padding)
 				return -1;
-			}
-			if (fcgi_get_params(fcgi, buf, buf + len) < 0) {
-				/* req->keep = 0; */
+			if (fcgi_get_params(fcgi, buf, buf + len) < 0)
 				return -1;
-			}
 			if (rtl_readn(fcgi->conn_sock, &hdr, sizeof(hdr)) != sizeof(hdr) ||
 			    hdr.version < RTL_FCGI_VERSION_1) {
-				/* req->keep = 0; */
 				return -1;
 			}
 			len = (hdr.contentLengthB1 << 8) | hdr.contentLengthB0;
@@ -326,9 +313,12 @@ int rtl_fcgi_read_request(rtl_fcgi_t *fcgi)
 			if (len + padding > RTL_FCGI_MAX_LENGTH)
 				return -1;
 
-			fcgi->in_buf = realloc(fcgi->in_buf, len);
-			if (!fcgi->in_buf)
+			void *p = realloc(fcgi->in_buf, len);
+			if (!p) {
+				free(fcgi->in_buf);
 				return -1;
+			}
+			fcgi->in_buf = p;
 
 			if (rtl_readn(fcgi->conn_sock, fcgi->in_buf, len) != len)
 				return -1;
@@ -395,6 +385,7 @@ int rtl_fcgi_printf(rtl_fcgi_t *fcgi, const char *fmt, ...)
 		free(buf);
 		return -1;
 	}
+	free(buf);
 	return 0;
 }
 
