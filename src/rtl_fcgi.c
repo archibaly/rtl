@@ -313,14 +313,12 @@ int rtl_fcgi_read_request(rtl_fcgi_t *fcgi)
 			if (len + padding > RTL_FCGI_MAX_LENGTH)
 				return -1;
 
-			void *p = realloc(fcgi->in_buf, len);
-			if (!p) {
-				free(fcgi->in_buf);
+			unsigned char *p = realloc(fcgi->in_buf, fcgi->in_len + len);
+			if (!p)
 				return -1;
-			}
 			fcgi->in_buf = p;
 
-			if (rtl_readn(fcgi->conn_sock, fcgi->in_buf, len) != len)
+			if (rtl_readn(fcgi->conn_sock, fcgi->in_buf + fcgi->in_len, len) != len)
 				return -1;
 			fcgi->in_len += len;
 
