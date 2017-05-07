@@ -61,12 +61,32 @@ typedef struct fcgi_end_request_rec {
 	fcgi_end_request_t body;
 } fcgi_end_request_rec_t;
 
+struct rtl_fcgi {
+	int listen_sock;
+	int conn_sock;
+	int id;
+	int keep;
+	int ended;
+
+	struct rtl_hash_table *env;
+
+	int in_len;
+	unsigned char *in_buf;
+
+	fcgi_header_t *out_hdr;
+	unsigned char *out_pos;
+	unsigned char out_buf[1024*8];
+	unsigned char reserved[sizeof(fcgi_end_request_rec_t)];
+};
+
 typedef union sa {
 	struct sockaddr     sa;
 	struct sockaddr_un  sa_unix;
 	struct sockaddr_in  sa_inet;
 	struct sockaddr_in6 sa_inet6;
 } sa_t;
+
+static int fcgi_read_request();
 
 static void fcgi_signal_handler(int signo)
 {
@@ -186,16 +206,57 @@ rtl_fcgi_t *rtl_fcgi_init(const char *path, uint16_t port)
 		return NULL;
 	}
 
+	fcgi->conn_sock = -1;
+	fcgi->id = -1;
+
 	return fcgi;
+}
+
+static void fcgi_close(rtl_fcgi_t *fcgi, int force, int destroy)
+{
+	if (destroy)
+		rtl_hash_free_nodes(fcgi->env);
+
+	char buf[8];
+	if ((force || !fcgi->keep) && fcgi->conn_sock >= 0) {
+		if (!force) {
+			shutdown(fcgi->conn_sock, 1);
+			/* read any remaining data, it may be omitted */
+			while (recv(fcgi->conn_sock, buf, sizeof(buf), 0) > 0)
+				(void)buf;
+		}
+		close(fcgi->conn_sock);
+		fcgi->conn_sock = -1;
+	}
 }
 
 int rtl_fcgi_accept(rtl_fcgi_t *fcgi)
 {
-	int conn_sock;
-	if ((conn_sock = accept(fcgi->listen_sock, NULL, NULL)) < 0)
-		return -1;
-	fcgi->conn_sock = conn_sock;
-	return conn_sock;
+	for (;;) {
+		if (fcgi->conn_sock < 0) {
+			for (;;) {
+				fcgi->conn_sock = accept(fcgi->listen_sock, NULL, NULL);
+				if (fcgi->conn_sock < 0)
+					return -1;
+				if (fcgi->conn_sock < FD_SETSIZE) {
+					fd_set set;
+					int ret;
+
+					FD_ZERO(&set);
+					FD_SET(fcgi->conn_sock, &set);
+					ret = select(fcgi->conn_sock + 1, &set, NULL, NULL, NULL);
+					if (ret > 0 && FD_ISSET(fcgi->conn_sock, &set))
+						break;
+					fcgi_close(fcgi, 1, 0);
+				}
+			}
+		}
+
+		if (fcgi_read_request(fcgi) == 0)
+			return fcgi->conn_sock;
+		else
+			fcgi_close(fcgi, 1, 1);
+	}
 }
 
 static int fcgi_get_params(rtl_fcgi_t *fcgi, unsigned char *p, unsigned char *end)
@@ -243,11 +304,17 @@ static int fcgi_get_params(rtl_fcgi_t *fcgi, unsigned char *p, unsigned char *en
 	return 0;
 }
 
-int rtl_fcgi_read_request(rtl_fcgi_t *fcgi)
+static int fcgi_read_request(rtl_fcgi_t *fcgi)
 {
 	fcgi_header_t hdr;
 	int len, padding;
 	unsigned char buf[RTL_FCGI_MAX_LENGTH];
+
+	fcgi->keep = 0;
+	fcgi->ended = 0;
+	fcgi->in_len = 0;
+	fcgi->out_hdr = NULL;
+	fcgi->out_pos = fcgi->out_buf;
 
 	/* begin request */
 	if (rtl_readn(fcgi->conn_sock, &hdr, sizeof(hdr)) != sizeof(hdr) ||
@@ -265,6 +332,7 @@ int rtl_fcgi_read_request(rtl_fcgi_t *fcgi)
 		if (rtl_readn(fcgi->conn_sock, buf, len + padding) != len + padding)
 			return -1;
 		b = (fcgi_begin_request_t *)buf;
+		fcgi->keep = (b->flags & RTL_FCGI_KEEP_CONN);
 
 		switch ((b->roleB1 << 8) + b->roleB0) {
 			case RTL_FCGI_RESPONDER:
@@ -337,6 +405,7 @@ int rtl_fcgi_read_request(rtl_fcgi_t *fcgi)
 	return 0;
 }
 
+/*
 int rtl_fcgi_write(rtl_fcgi_t *fcgi, const void *buf, size_t count)
 {
 	int i, n;
@@ -366,6 +435,7 @@ int rtl_fcgi_write(rtl_fcgi_t *fcgi, const void *buf, size_t count)
 	}
 	return 0;
 }
+*/
 
 int rtl_fcgi_printf(rtl_fcgi_t *fcgi, const char *fmt, ...)
 {
@@ -379,7 +449,7 @@ int rtl_fcgi_printf(rtl_fcgi_t *fcgi, const char *fmt, ...)
 
 	if (ret < 0)
 		return -1;
-	if (rtl_fcgi_write(fcgi, buf, strlen(buf)) < 0) {
+	if (rtl_fcgi_write(fcgi, RTL_FCGI_STDOUT, buf, strlen(buf)) < 0) {
 		free(buf);
 		return -1;
 	}
@@ -387,26 +457,197 @@ int rtl_fcgi_printf(rtl_fcgi_t *fcgi, const char *fmt, ...)
 	return 0;
 }
 
-static int fcgi_end(rtl_fcgi_t *fcgi)
+static inline fcgi_header_t *open_packet(rtl_fcgi_t *fcgi, rtl_fcgi_request_type_t type)
 {
-	fcgi_end_request_rec_t rec;
-	fcgi_make_header(&rec.hdr, RTL_FCGI_END_REQUEST, fcgi->id, sizeof(rec.body));
-	rec.body.appStatusB3 = 0;
-	rec.body.appStatusB2 = 0;
-	rec.body.appStatusB1 = 0;
-	rec.body.appStatusB0 = 0;
-	rec.body.protocolStatus = RTL_FCGI_REQUEST_COMPLETE;
-	if (rtl_writen(fcgi->conn_sock, &rec, sizeof(rec)) != sizeof(rec))
-		return -1;
-	return 0;
+	fcgi->out_hdr = (fcgi_header_t *)fcgi->out_pos;
+	fcgi->out_hdr->type = type;
+	fcgi->out_pos += sizeof(fcgi_header_t);
+	return fcgi->out_hdr;
 }
 
-unsigned char *rtl_fcgi_get_stdin(rtl_fcgi_t *fcgi, int *len)
+static inline void close_packet(rtl_fcgi_t *fcgi)
 {
-	if (!len)
-		return NULL;
-	*len = fcgi->in_len;
-	return fcgi->in_buf;
+	int len;
+	if (fcgi->out_hdr) {
+		len = (int)(fcgi->out_pos - ((unsigned char *)fcgi->out_hdr + sizeof(fcgi_header_t)));
+		fcgi->out_pos += fcgi_make_header(fcgi->out_hdr, (rtl_fcgi_request_type_t)fcgi->out_hdr->type, fcgi->id, len);
+		fcgi->out_hdr = NULL;
+	}
+}
+
+static int fcgi_flush(rtl_fcgi_t *fcgi, int end)
+{
+	int len;
+
+	close_packet(fcgi);
+
+	len = (int)(fcgi->out_pos - fcgi->out_buf);
+
+	if (end) {
+		fcgi_end_request_rec_t *rec = (fcgi_end_request_rec_t *)(fcgi->out_pos);
+
+		fcgi_make_header(&rec->hdr, RTL_FCGI_END_REQUEST, fcgi->id, sizeof(fcgi_end_request_t));
+		rec->body.appStatusB3 = 0;
+		rec->body.appStatusB2 = 0;
+		rec->body.appStatusB1 = 0;
+		rec->body.appStatusB0 = 0;
+		rec->body.protocolStatus = RTL_FCGI_REQUEST_COMPLETE;
+		len += sizeof(fcgi_end_request_rec_t);
+	}
+
+	if (rtl_writen(fcgi->conn_sock, fcgi->out_buf, len) != len) {
+		fcgi->keep = 0;
+		fcgi->out_pos = fcgi->out_buf;
+		return 0;
+	}
+
+	fcgi->out_pos = fcgi->out_buf;
+	return 1;
+}
+
+int rtl_fcgi_write(rtl_fcgi_t *fcgi, rtl_fcgi_request_type_t type, const char *str, int len)
+{
+	int limit, rest;
+
+	if (len <= 0)
+		return 0;
+
+	if (fcgi->out_hdr && fcgi->out_hdr->type != type)
+		close_packet(fcgi);
+#if 0
+	/* Unoptimized, but clear version */
+	rest = len;
+	while (rest > 0) {
+		limit = sizeof(fcgi->out_buf) - (fcgi->out_pos - fcgi->out_buf);
+
+		if (!fcgi->out_hdr) {
+			if (limit < sizeof(fcgi_header)) {
+				if (!fcgi_flush(fcgi, 0)) {
+					return -1;
+				}
+			}
+			open_packet(fcgi, type);
+		}
+		limit = sizeof(fcgi->out_buf) - (fcgi->out_pos - fcgi->out_buf);
+		if (rest < limit) {
+			memcpy(fcgi->out_pos, str, rest);
+			fcgi->out_pos += rest;
+			return len;
+		} else {
+			memcpy(fcgi->out_pos, str, limit);
+			fcgi->out_pos += limit;
+			rest -= limit;
+			str += limit;
+			if (!fcgi_flush(fcgi, 0)) {
+				return -1;
+			}
+		}
+	}
+#else
+	/* Optimized version */
+	limit = (int)(sizeof(fcgi->out_buf) - (fcgi->out_pos - fcgi->out_buf));
+	if (!fcgi->out_hdr) {
+		limit -= sizeof(fcgi_header_t);
+		if (limit < 0)
+			limit = 0;
+	}
+
+	if (len < limit) {
+		if (!fcgi->out_hdr) {
+			open_packet(fcgi, type);
+		}
+		memcpy(fcgi->out_pos, str, len);
+		fcgi->out_pos += len;
+	} else if (len - limit < (int)(sizeof(fcgi->out_buf) - sizeof(fcgi_header_t))) {
+		if (!fcgi->out_hdr) {
+			open_packet(fcgi, type);
+		}
+		if (limit > 0) {
+			memcpy(fcgi->out_pos, str, limit);
+			fcgi->out_pos += limit;
+		}
+		if (!fcgi_flush(fcgi, 0)) {
+			return -1;
+		}
+		if (len > limit) {
+			open_packet(fcgi, type);
+			memcpy(fcgi->out_pos, str + limit, len - limit);
+			fcgi->out_pos += len - limit;
+		}
+	} else {
+		int pos = 0;
+		int pad;
+
+		close_packet(fcgi);
+		while ((len - pos) > 0xffff) {
+			open_packet(fcgi, type);
+			fcgi_make_header(fcgi->out_hdr, type, fcgi->id, 0xfff8);
+			fcgi->out_hdr = NULL;
+			if (!fcgi_flush(fcgi, 0)) {
+				return -1;
+			}
+			if (rtl_writen(fcgi->conn_sock, str + pos, 0xfff8) != 0xfff8) {
+				fcgi->keep = 0;
+				return -1;
+			}
+			pos += 0xfff8;
+		}
+
+		pad = (((len - pos) + 7) & ~7) - (len - pos);
+		rest = pad ? 8 - pad : 0;
+
+		open_packet(fcgi, type);
+		fcgi_make_header(fcgi->out_hdr, type, fcgi->id, (len - pos) - rest);
+		fcgi->out_hdr = NULL;
+		if (!fcgi_flush(fcgi, 0)) {
+			return -1;
+		}
+		if (rtl_writen(fcgi->conn_sock, str + pos, (len - pos) - rest) != (len - pos) - rest) {
+			fcgi->keep = 0;
+			return -1;
+		}
+		if (pad) {
+			open_packet(fcgi, type);
+			memcpy(fcgi->out_pos, str + len - rest,  rest);
+			fcgi->out_pos += rest;
+		}
+	}
+#endif
+	return len;
+}
+
+static int fcgi_end(rtl_fcgi_t *fcgi)
+{
+	int ret = -1;
+	if (!fcgi->ended) {
+		ret = fcgi_flush(fcgi, 1);
+		fcgi->ended = 1;
+	}
+	return ret;
+}
+
+int rtl_fcgi_finish(rtl_fcgi_t *fcgi)
+{
+	int ret = -1;
+
+	if (fcgi->in_buf) {
+		free(fcgi->in_buf);
+		fcgi->in_buf = NULL;
+		fcgi->in_len = 0;
+	}
+	if (fcgi->conn_sock >= 0) {
+		ret = fcgi_end(fcgi);
+		fcgi_close(fcgi, 1, 1);
+	}
+	return ret;
+}
+
+int rtl_fcgi_get_stdin(rtl_fcgi_t *fcgi, unsigned char *buf)
+{
+	if (!buf)
+		return -1;
+	buf = fcgi->in_buf;
+	return fcgi->in_len;
 }
 
 char *rtl_fcgi_getenv(const rtl_fcgi_t *fcgi, const char *name)
@@ -415,16 +656,4 @@ char *rtl_fcgi_getenv(const rtl_fcgi_t *fcgi, const char *name)
 	if (rtl_hash_find(fcgi->env, name, &value, 1) == 0)
 		return NULL;
 	return value;
-}
-
-void rtl_fcgi_finish(rtl_fcgi_t *fcgi)
-{
-	if (fcgi->in_buf) {
-		free(fcgi->in_buf);
-		fcgi->in_buf = NULL;
-		fcgi->in_len = 0;
-	}
-	fcgi_end(fcgi);
-	close(fcgi->conn_sock);
-	rtl_hash_free_nodes(fcgi->env);
 }

@@ -7,6 +7,7 @@
 
 #define RTL_FCGI_VERSION_1	1
 #define RTL_FCGI_MAX_LENGTH	0xffff
+#define RTL_FCGI_KEEP_CONN	1
 
 typedef enum rtl_fcgi_role {
 	RTL_FCGI_RESPONDER	= 1,
@@ -41,26 +42,15 @@ struct rtl_fcgi_param {
 	char *value;
 };
 
-typedef struct rtl_fcgi {
-	int listen_sock;
-	int conn_sock;
-	int id;
-	int keep;
-
-	struct rtl_hash_table *env;
-
-	int in_len;
-	unsigned char *in_buf;
-} rtl_fcgi_t;
+typedef struct rtl_fcgi rtl_fcgi_t;
 
 rtl_fcgi_t *rtl_fcgi_init(const char *path, uint16_t port);
 int rtl_fcgi_accept(rtl_fcgi_t *rtl_fcgi);
-void rtl_fcgi_finish(rtl_fcgi_t *rtl_fcgi);
+int rtl_fcgi_finish(rtl_fcgi_t *fcgi);
 int rtl_fcgi_printf(rtl_fcgi_t *rtl_fcgi, const char *fmt, ...);
-int rtl_fcgi_write(rtl_fcgi_t *rtl_fcgi, const void *buf, size_t count);
-unsigned char *rtl_fcgi_get_stdin(rtl_fcgi_t *rtl_fcgi, int *len);
+int rtl_fcgi_write(rtl_fcgi_t *fcgi, rtl_fcgi_request_type_t type, const char *str, int len);
+int rtl_fcgi_get_stdin(rtl_fcgi_t *fcgi, unsigned char *buf);
 char *rtl_fcgi_getenv(const rtl_fcgi_t *rtl_fcgi, const char *name);
 int rtl_fcgi_putenv(rtl_fcgi_t *rtl_fcgi, const char *key, const char *value);
-int rtl_fcgi_read_request(rtl_fcgi_t *rtl_fcgi);
 
 #endif /* _RTL_FCGI_H_ */
