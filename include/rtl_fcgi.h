@@ -49,7 +49,7 @@ int rtl_fcgi_accept(rtl_fcgi_t *rtl_fcgi);
 int rtl_fcgi_finish(rtl_fcgi_t *fcgi);
 int rtl_fcgi_printf(rtl_fcgi_t *rtl_fcgi, const char *fmt, ...);
 int rtl_fcgi_write(rtl_fcgi_t *fcgi, rtl_fcgi_request_type_t type, const char *str, int len);
-int rtl_fcgi_get_stdin(rtl_fcgi_t *fcgi, unsigned char *buf);
+unsigned char *rtl_fcgi_get_stdin(rtl_fcgi_t *fcgi, int *len);
 char *rtl_fcgi_getenv(const rtl_fcgi_t *rtl_fcgi, const char *name);
 int rtl_fcgi_putenv(rtl_fcgi_t *rtl_fcgi, const char *key, const char *value);
 

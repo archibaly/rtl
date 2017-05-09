@@ -167,6 +167,190 @@ __fail:
 	return url;
 }
 
+#define ISQSCHR(x)	((((x)=='=')||((x)=='#')||((x)=='&')||((x)=='\0')) ? 0 : 1)
+
+static int hex2dec(char hex)
+{
+	if (hex >= '0' && hex <= '9')
+		return hex - '0';
+	else if (hex >= 'A' && hex <= 'F')
+		return hex - 'A' + 10;
+	else if (hex >= 'a' && hex <= 'f')
+		return hex - 'a' + 10;
+	else
+		return 0;
+}
+
+static int query_strncmp(const char *s, const char *qs, register size_t n)
+{
+	int i = 0;
+	register unsigned char u1, u2, unyb, lnyb;
+
+	while (n-- > 0) {
+		u1 = (unsigned char)*s++;
+		u2 = (unsigned char)*qs++;
+
+		if (!ISQSCHR(u1)) {
+			u1 = '\0';
+		}
+		if (!ISQSCHR(u2)) {
+			u2 = '\0';
+		}
+
+		if (u1 == '+') {
+			u1 = ' ';
+		}
+		if (u1 == '%') {		/* easier/safer than scanf */
+			unyb = (unsigned char)*s++;
+			lnyb = (unsigned char)*s++;
+			if (isxdigit(unyb) && isxdigit(lnyb))
+				u1 = (hex2dec(unyb) * 16) + hex2dec(lnyb);
+			else
+				u1 = '\0';
+		}
+
+		if (u2 == '+') {
+			u2 = ' ';
+		}
+		if (u2 == '%') {		/* easier/safer than scanf */
+			unyb = (unsigned char)*qs++;
+			lnyb = (unsigned char)*qs++;
+			if (isxdigit(unyb) && isxdigit(lnyb))
+				u2 = (hex2dec(unyb) * 16) + hex2dec(lnyb);
+			else
+				u2 = '\0';
+		}
+
+		if (u1 != u2)
+			return u1 - u2;
+		if (u1 == '\0')
+			return 0;
+		i++;
+	}
+	if (ISQSCHR(*qs))
+		return -1;
+	else
+		return 0;
+}
+
+static int query_decode(char *qs)
+{
+	int i = 0, j = 0;
+
+	while (ISQSCHR(qs[j])) {
+		if (qs[j] == '+') {
+			qs[i] = ' ';
+		} else if (qs[j] == '%') {	/* easier/safer than scanf */
+			if (!isxdigit(qs[j + 1]) || !isxdigit(qs[j + 2])) {
+				qs[i] = '\0';
+				return i;
+			}
+			qs[i] = (hex2dec(qs[j + 1]) * 16) + hex2dec(qs[j + 2]);
+			j += 2;
+		} else {
+			qs[i] = qs[j];
+		}
+		i++;
+		j++;
+	}
+	qs[i] = '\0';
+
+	return i;
+}
+
+int rtl_url_query_parse(char *qs, char **qs_kv, int qs_kv_size)
+{
+	int i, j;
+	char *substr_ptr;
+
+	for (i = 0; i < qs_kv_size; i++)
+		qs_kv[i] = NULL;
+
+	/* find the beginning of the k/v substrings */
+	if ((substr_ptr = strchr(qs, '?')) != NULL)
+		substr_ptr++;
+	else
+		substr_ptr = qs;
+
+	i = 0;
+	while (i < qs_kv_size) {
+		qs_kv[i] = substr_ptr;
+		j = strcspn(substr_ptr, "&");
+		if (substr_ptr[j] == '\0') {
+			break;
+		}
+		substr_ptr += j + 1;
+		i++;
+	}
+	i++;						/* x &'s -> means x iterations of this loop -> means *x+1* k/v pairs */
+
+	/* we only decode the values in place, the keys could have '='s in them */
+	/* which will hose our ability to distinguish keys from values later */
+	for (j = 0; j < i; j++) {
+		substr_ptr = qs_kv[j] + strcspn(qs_kv[j], "=&#");
+		if (substr_ptr[0] == '&')	/* blank value: skip decoding */
+			substr_ptr[0] = '\0';
+		else
+			query_decode(++substr_ptr);
+	}
+
+	return i;
+}
+
+char *rtl_url_query_k2v(const char *key, char **qs_kv, int qs_kv_size)
+{
+	int i;
+	size_t key_len, skip;
+
+	key_len = strlen(key);
+
+	for (i = 0; i < qs_kv_size; i++) {
+		/* we rely on the unambiguous '=' to find the value in our k/v pair */
+		if (query_strncmp(key, qs_kv[i], key_len) == 0) {
+			skip = strcspn(qs_kv[i], "=");
+			if (qs_kv[i][skip] == '=')
+				skip++;
+			/* return (zero-char value) ? ptr to trailing '\0' : ptr to value */
+			return qs_kv[i] + skip;
+		}
+	}
+
+	return NULL;
+}
+
+char *rtl_url_query_scanvalue(const char *key, const char *qs, char *val, size_t val_len)
+{
+	int i, key_len;
+	char *tmp;
+
+	/* find the beginning of the k/v substrings */
+	if ((tmp = strchr(qs, '?')) != NULL)
+		qs = tmp + 1;
+
+	key_len = strlen(key);
+	while (qs[0] != '#' && qs[0] != '\0') {
+		if (query_strncmp(key, qs, key_len) == 0)
+			break;
+		qs += strcspn(qs, "&") + 1;
+	}
+
+	if (qs[0] == '\0')
+		return NULL;
+
+	qs += strcspn(qs, "=&#");
+	if (qs[0] == '=') {
+		qs++;
+		i = strcspn(qs, "&=#");
+		strncpy(val, qs, (val_len - 1) < (i + 1) ? (val_len - 1) : (i + 1));
+		query_decode(val);
+	} else {
+		if (val_len > 0)
+			val[0] = '\0';
+	}
+
+	return val;
+}
+
 void rtl_url_free(rtl_url_field_t *url)
 {
 	if (!url)

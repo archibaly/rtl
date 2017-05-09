@@ -133,10 +133,8 @@ static int fcgi_listen(const char *path, uint16_t port)
 					hep = gethostbyname(path);
 
 				if (!hep || hep->h_addrtype != AF_INET || !hep->h_addr_list[0]) {
-					/* log_write(LOG_ERRO, "Cannot resolve host name '%s'!", host); */
 					return -1;
 				} else if (hep->h_addr_list[1]) {
-					/* log_write(LOG_ERRO, "Host '%s' has multiple addresses. You must choose one explicitly!", host); */
 					return -1;
 				}
 				sa.sa_inet.sin_addr.s_addr = ((struct in_addr*)hep->h_addr_list[0])->s_addr;
@@ -146,7 +144,6 @@ static int fcgi_listen(const char *path, uint16_t port)
 		int path_len = strlen(path);
 
 		if (path_len >= (int)sizeof(sa.sa_unix.sun_path)) {
-			/* log_write(LOG_ERRO, "Listening socket's path name is too long."); */
 			return -1;
 		}
 
@@ -163,7 +160,6 @@ static int fcgi_listen(const char *path, uint16_t port)
 	    bind(listen_sock, (struct sockaddr *) &sa, sock_len) < 0 ||
 	    listen(listen_sock, SOMAXCONN) < 0) {
 		close(listen_sock);
-		/* log_write(LOG_ERRO, "Cannot bind/listen socket - [%d] %s.",errno, strerror(errno)); */
 		return -1;
 	}
 
@@ -285,7 +281,7 @@ static int fcgi_get_params(rtl_fcgi_t *fcgi, unsigned char *p, unsigned char *en
 			val_len |= *p++;
 		}
 		if (name_len + val_len > (unsigned int) (end - p)) {
-			/* Malformated request */
+			/* malformated request */
 			return -1;
 		}
 
@@ -404,38 +400,6 @@ static int fcgi_read_request(rtl_fcgi_t *fcgi)
 
 	return 0;
 }
-
-/*
-int rtl_fcgi_write(rtl_fcgi_t *fcgi, const void *buf, size_t count)
-{
-	int i, n;
-	char tmp[8] = "";
-	fcgi_header_t hdr;
-	unsigned char out_buf[RTL_FCGI_MAX_LENGTH + 8];
-	int out_len;
-
-	n = count / RTL_FCGI_MAX_LENGTH;
-	for (i = 0; i < n; i++) {
-		fcgi_make_header(&hdr, RTL_FCGI_STDOUT, fcgi->id, RTL_FCGI_MAX_LENGTH);
-		if (rtl_writen(fcgi->conn_sock, &hdr, sizeof(hdr)) != sizeof(hdr))
-			return -1;
-		if (rtl_writen(fcgi->conn_sock, buf + i * RTL_FCGI_MAX_LENGTH, RTL_FCGI_MAX_LENGTH) != RTL_FCGI_MAX_LENGTH)
-			return -1;
-	}
-
-	int left = count - n * RTL_FCGI_MAX_LENGTH;
-	if (left > 0) {
-		int padding = fcgi_make_header(&hdr, RTL_FCGI_STDOUT, fcgi->id, left);
-		memcpy(out_buf, &hdr, sizeof(hdr));
-		memcpy(out_buf + sizeof(hdr), buf + i * RTL_FCGI_MAX_LENGTH, left);
-		memcpy(out_buf + sizeof(hdr) + left, tmp, padding);
-		out_len = sizeof(hdr) + left + padding;
-		if (rtl_writen(fcgi->conn_sock, out_buf, out_len) != out_len)
-			return -1;
-	}
-	return 0;
-}
-*/
 
 int rtl_fcgi_printf(rtl_fcgi_t *fcgi, const char *fmt, ...)
 {
@@ -642,12 +606,12 @@ int rtl_fcgi_finish(rtl_fcgi_t *fcgi)
 	return ret;
 }
 
-int rtl_fcgi_get_stdin(rtl_fcgi_t *fcgi, unsigned char *buf)
+unsigned char *rtl_fcgi_get_stdin(rtl_fcgi_t *fcgi, int *len)
 {
-	if (!buf)
-		return -1;
-	buf = fcgi->in_buf;
-	return fcgi->in_len;
+	if (!len)
+		return NULL;
+	*len = fcgi->in_len;
+	return fcgi->in_buf;
 }
 
 char *rtl_fcgi_getenv(const rtl_fcgi_t *fcgi, const char *name)

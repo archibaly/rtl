@@ -13,5 +13,13 @@ int main()
 
 	rtl_url_free(url);
 
+	char qs[] = "username=jacky&passwd=123456&ip=192.168.20.234";
+
+	char *kvpairs[8];
+	int n = rtl_url_query_parse(qs, kvpairs, sizeof(kvpairs) / sizeof(kvpairs[0]));
+	printf("number of query is: %d\n", n);
+	printf("username = %s\n", rtl_url_query_k2v("username", kvpairs, n));
+	printf("passwd = %s\n", rtl_url_query_k2v("passwd", kvpairs, n));
+
 	return 0;
 }
