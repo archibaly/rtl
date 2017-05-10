@@ -248,7 +248,7 @@ int rtl_fcgi_accept(rtl_fcgi_t *fcgi)
 			}
 		}
 
-		if (fcgi_read_request(fcgi) == 0)
+		if (fcgi_read_request(fcgi))
 			return fcgi->conn_sock;
 		else
 			fcgi_close(fcgi, 1, 1);
@@ -315,18 +315,18 @@ static int fcgi_read_request(rtl_fcgi_t *fcgi)
 	/* begin request */
 	if (rtl_readn(fcgi->conn_sock, &hdr, sizeof(hdr)) != sizeof(hdr) ||
 		hdr.version < RTL_FCGI_VERSION_1) {
-		return -1;
+		return 0;
 	}
 	len = (hdr.contentLengthB1 << 8) | hdr.contentLengthB0;
 	padding = hdr.paddingLength;
 	if (len + padding > RTL_FCGI_MAX_LENGTH)
-		return -1;
+		return 0;
 	fcgi->id = (hdr.requestIdB1 << 8) + hdr.requestIdB0;
 	if (hdr.type == RTL_FCGI_BEGIN_REQUEST && len == sizeof(fcgi_begin_request_t)) {
 		fcgi_begin_request_t *b;
 
 		if (rtl_readn(fcgi->conn_sock, buf, len + padding) != len + padding)
-			return -1;
+			return 0;
 		b = (fcgi_begin_request_t *)buf;
 		fcgi->keep = (b->flags & RTL_FCGI_KEEP_CONN);
 
@@ -341,26 +341,26 @@ static int fcgi_read_request(rtl_fcgi_t *fcgi)
 				rtl_hash_add(fcgi->env, "FCGI_ROLE", sizeof("FCGI_ROLE"), "FILTER", sizeof("FILTER"));
 				break;
 			default:
-				return -1;
+				return 0;
 		}
 
 		/* params */
 		if (rtl_readn(fcgi->conn_sock, &hdr, sizeof(hdr)) != sizeof(hdr) ||
 		    hdr.version < RTL_FCGI_VERSION_1) {
-			return -1;
+			return 0;
 		}
 		len = (hdr.contentLengthB1 << 8) | hdr.contentLengthB0;
 		padding = hdr.paddingLength;
 		while (hdr.type == RTL_FCGI_PARAMS && len > 0) {
 			if (len + padding > RTL_FCGI_MAX_LENGTH)
-				return -1;
+				return 0;
 			if (rtl_readn(fcgi->conn_sock, buf, len + padding) != len + padding)
-				return -1;
+				return 0;
 			if (fcgi_get_params(fcgi, buf, buf + len) < 0)
-				return -1;
+				return 0;
 			if (rtl_readn(fcgi->conn_sock, &hdr, sizeof(hdr)) != sizeof(hdr) ||
 			    hdr.version < RTL_FCGI_VERSION_1) {
-				return -1;
+				return 0;
 			}
 			len = (hdr.contentLengthB1 << 8) | hdr.contentLengthB0;
 			padding = hdr.paddingLength;
@@ -369,36 +369,43 @@ static int fcgi_read_request(rtl_fcgi_t *fcgi)
 		/* stdin */
 		if (rtl_readn(fcgi->conn_sock, &hdr, sizeof(hdr)) != sizeof(hdr) ||
 		    hdr.version < RTL_FCGI_VERSION_1) {
-			return -1;
+			return 0;
 		}
 		len = (hdr.contentLengthB1 << 8) | hdr.contentLengthB0;
 		padding = hdr.paddingLength;
 		while (hdr.type == RTL_FCGI_STDIN && len > 0) {
 			if (len + padding > RTL_FCGI_MAX_LENGTH)
-				return -1;
+				return 0;
 
 			unsigned char *p = realloc(fcgi->in_buf, fcgi->in_len + len);
 			if (!p)
-				return -1;
+				return 0;
 			fcgi->in_buf = p;
 
 			if (rtl_readn(fcgi->conn_sock, fcgi->in_buf + fcgi->in_len, len) != len)
-				return -1;
+				return 0;
 			fcgi->in_len += len;
 
 			if (rtl_readn(fcgi->conn_sock, buf, padding) != padding)
-				return -1;
+				return 0;
 
 			if (rtl_readn(fcgi->conn_sock, &hdr, sizeof(hdr)) != sizeof(hdr) ||
 			    hdr.version < RTL_FCGI_VERSION_1) {
-				return -1;
+				return 0;
 			}
 			len = (hdr.contentLengthB1 << 8) | hdr.contentLengthB0;
 			padding = hdr.paddingLength;
 		}
+	} else if (hdr.type == RTL_FCGI_GET_VALUES) {
+		fcgi_make_header(&hdr, RTL_FCGI_GET_VALUES_RESULT, 0, 0);
+		if (rtl_writen(fcgi->conn_sock, &hdr, sizeof(hdr)) != sizeof(hdr))
+			fcgi->keep = 0;
+		return 0;
+	} else {
+		return 0;
 	}
 
-	return 0;
+	return 1;
 }
 
 int rtl_fcgi_printf(rtl_fcgi_t *fcgi, const char *fmt, ...)
@@ -413,12 +420,10 @@ int rtl_fcgi_printf(rtl_fcgi_t *fcgi, const char *fmt, ...)
 
 	if (ret < 0)
 		return -1;
-	if (rtl_fcgi_write(fcgi, RTL_FCGI_STDOUT, buf, strlen(buf)) < 0) {
-		free(buf);
-		return -1;
-	}
+
+	ret = rtl_fcgi_write(fcgi, RTL_FCGI_STDOUT, buf, strlen(buf));
 	free(buf);
-	return 0;
+	return ret;
 }
 
 static inline fcgi_header_t *open_packet(rtl_fcgi_t *fcgi, rtl_fcgi_request_type_t type)
