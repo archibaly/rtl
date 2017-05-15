@@ -19,9 +19,9 @@
  *
  */
 
-#define RTL_HOST_IPV4	1
-#define RTL_HOST_IPV6	2
-#define RTL_HOST_DOMAIN	3
+#define RTL_HOST_IPV4	0
+#define RTL_HOST_IPV6	1
+#define RTL_HOST_DOMAIN	2
 
 typedef struct {
 	int host_type;
