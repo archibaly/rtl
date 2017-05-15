@@ -7,28 +7,30 @@
 #include "rtl_url.h"
 #include "rtl_http.h"
 #include "rtl_https.h"
-#include "rtl_socket.h"
-#include "rtl_debug.h"
 
 static int wget_http(const char *filename, const char *path, const char *host,
 					 int port)
 {
-	struct rtl_socket_connection *sc = rtl_http_send_get_request(path, host, port);
-	if (!sc)
+	struct rtl_http_connection *hc = rtl_http_send_get_request(path, host, port, 0);
+	if (!hc)
 		return -1;
 
-	return rtl_http_save_body_to_file(sc, filename);
+	int ret = rtl_http_save_body_to_file(hc, filename);
+	rtl_http_close_connection(hc);
+
+	return ret;
 }
 
 static int wget_https(const char *filename, const char *path, const char *host,
 					  int port)
 {
-	struct ssl ssl;
-
-	if (rtl_https_send_get_request(&ssl, path, host, port) < 0)
+	struct rtl_https_connection *hc = rtl_https_send_get_request(path, host, port, 0);
+	if (!hc)
 		return -1;
 
-	return rtl_https_save_body_to_file(&ssl, filename);
+	int ret = rtl_https_save_body_to_file(hc, filename);
+	rtl_https_close_connection(hc);
+	return ret;
 }
 
 /* so far, just support http and https */

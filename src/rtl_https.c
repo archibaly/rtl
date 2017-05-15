@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -21,133 +22,124 @@ static int ssl_writen(SSL *ssl, const void *buf, int num)
 	return num - nleft;
 }
 
-int rtl_https_send_get_request(struct ssl *ssl, const char *path,
-							   const char *host, int port)
+struct rtl_https_connection *rtl_https_send_get_request(const char *path, const char *host,
+														int port, int keepalive)
 {
 	char header[BUFSIZ];
 	int header_len;
+	struct rtl_https_connection *hc;
 
-	header_len = rtl_http_build_get_header(header, sizeof(header), path, host);
+	if (!(hc = malloc(sizeof(struct rtl_https_connection))))
+		return NULL;
+
+	header_len = rtl_http_build_get_header(header, sizeof(header), path, host, keepalive);
 
 	SSL_library_init();
-	ssl->ctx = SSL_CTX_new(SSLv23_client_method());
-	if (ssl->ctx == NULL)
-		return -1;
+	hc->ctx = SSL_CTX_new(SSLv23_client_method());
+	if (hc->ctx == NULL)
+		goto free_hc;
 
-	if (!(ssl->ssl = SSL_new(ssl->ctx)))
+	if (!(hc->ssl = SSL_new(hc->ctx)))
 		goto free_ssl_ctx;
 
-	ssl->sc = rtl_socket_tcp_connect(host, port);
-	if (!ssl->sc)
+	hc->sc = rtl_socket_tcp_connect(host, port);
+	if (!hc->sc)
 		goto free_ssl;
 
-	if (SSL_set_fd(ssl->ssl, ssl->sc->fd) == 0)
+	if (SSL_set_fd(hc->ssl, hc->sc->fd) == 0)
 		goto free_sockfd;
 
-	if (SSL_connect(ssl->ssl) != 1)
+	if (SSL_connect(hc->ssl) != 1)
 		goto free_all;
 
-	if (ssl_writen(ssl->ssl, header, header_len) < 0)
+	if (ssl_writen(hc->ssl, header, header_len) < 0)
 		goto free_all;
 
-	return 0;
+	return hc;
 
 free_all:
-	SSL_shutdown(ssl->ssl);
+	SSL_shutdown(hc->ssl);
 free_sockfd:
-	rtl_socket_connection_close(ssl->sc);
+	rtl_socket_connection_close(hc->sc);
 free_ssl:
-	SSL_free(ssl->ssl);
+	SSL_free(hc->ssl);
 free_ssl_ctx:
-	SSL_CTX_free(ssl->ctx);
+	SSL_CTX_free(hc->ctx);
+free_hc:
+	free(hc);
 
-	return -1;
+	return NULL;
 }
 
-int rtl_https_send_post_request(struct ssl *ssl, const char *path,
-								const char *host, int port, const uint8_t *body,
-								size_t body_len)
+struct rtl_https_connection *rtl_https_send_post_request(const char *path, const char *host,
+														 int port, const uint8_t *body,
+														 size_t body_len, int keepalive)
 {
 	char header[BUFSIZ];
 	int header_len;
+	struct rtl_https_connection *hc;
 
-	header_len = rtl_http_build_get_header(header, sizeof(header), path, host);
+	if (!(hc = malloc(sizeof(struct rtl_https_connection))))
+		return NULL;
+
+	header_len = rtl_http_build_post_header(header, sizeof(header), path, host,
+											body_len, keepalive);
 
 	SSL_library_init();
-	ssl->ctx = SSL_CTX_new(SSLv23_client_method());
-	if (ssl->ctx == NULL)
-		return -1;
+	hc->ctx = SSL_CTX_new(SSLv23_client_method());
+	if (hc->ctx == NULL)
+		goto free_hc;
 
-	if (!(ssl->ssl = SSL_new(ssl->ctx)))
+	if (!(hc->ssl = SSL_new(hc->ctx)))
 		goto free_ssl_ctx;
 
-	ssl->sc = rtl_socket_tcp_connect(host, port);
-	if (!ssl->sc)
+	hc->sc = rtl_socket_tcp_connect(host, port);
+	if (!hc->sc)
 		goto free_ssl;
 
-	if (SSL_set_fd(ssl->ssl, ssl->sc->fd) == 0)
+	if (SSL_set_fd(hc->ssl, hc->sc->fd) == 0)
 		goto free_sockfd;
 
-	if (SSL_connect(ssl->ssl) != 1)
+	if (SSL_connect(hc->ssl) != 1)
 		goto free_all;
 
-	if (ssl_writen(ssl->ssl, header, header_len) < 0)
+	if (ssl_writen(hc->ssl, header, header_len) < 0)
 		goto free_all;
 
-	if (ssl_writen(ssl->ssl, body, body_len) < 0)
+	if (ssl_writen(hc->ssl, body, body_len) < 0)
 		goto free_all;
 
-	return 0;
+	return hc;
 
 free_all:
-	SSL_shutdown(ssl->ssl);
+	SSL_shutdown(hc->ssl);
 free_sockfd:
-	rtl_socket_connection_close(ssl->sc);
+	rtl_socket_connection_close(hc->sc);
 free_ssl:
-	SSL_free(ssl->ssl);
+	SSL_free(hc->ssl);
 free_ssl_ctx:
-	SSL_CTX_free(ssl->ctx);
+	SSL_CTX_free(hc->ctx);
+free_hc:
+	free(hc);
 
-	return -1;
+	return NULL;
 }
 
-int rtl_https_recv_response(struct ssl *ssl, uint8_t *resp, size_t size)
+int rtl_https_recv_response(struct rtl_https_connection *hc, uint8_t *resp, size_t size)
 {
-	int nread;
-	int ret = -1;
-	uint8_t *ptr = resp;
-
-	for (;;) {
-		nread = SSL_read(ssl->ssl, ptr, size);
-		if (nread == 0)	/* receive done */
-			break;
-		else if (nread < 0)
-			goto out;
-		size -= nread;
-		ptr  += nread;
-	}
-
-	ret = ptr - resp;
-
-out:
-	SSL_shutdown(ssl->ssl);
-	rtl_socket_connection_close(ssl->sc);
-	SSL_free(ssl->ssl);
-	SSL_CTX_free(ssl->ctx);
-
-	return ret;
+	return SSL_read(hc->ssl, resp, size);
 }
 
-int rtl_https_save_body_to_file(struct ssl *ssl, const char *filename)
+int rtl_https_save_body_to_file(struct rtl_https_connection *hc, const char *filename)
 {
 	int n, ret = -1;
 	uint8_t buff[BUFSIZ];
 
 	FILE *fp = fopen(filename, "w");
-	if (fp == NULL)
-		goto out;
+	if (!fp)
+		return -1;
 
-	n = SSL_read(ssl->ssl, buff, sizeof(buff));
+	n = SSL_read(hc->ssl, buff, sizeof(buff));
 	if (n < 0)
 		goto out;
 
@@ -156,7 +148,7 @@ int rtl_https_save_body_to_file(struct ssl *ssl, const char *filename)
 		goto out;
 
 	for (;;) {
-		n = SSL_read(ssl->ssl, buff, sizeof(buff));
+		n = SSL_read(hc->ssl, buff, sizeof(buff));
 		if (n > 0) {
 			if (fwrite(buff, sizeof(uint8_t), n, fp) != n)
 				goto out;
@@ -170,20 +162,16 @@ int rtl_https_save_body_to_file(struct ssl *ssl, const char *filename)
 	ret = 0;
 
 out:
-	if (fp != NULL)
-		fclose(fp);
-	SSL_shutdown(ssl->ssl);
-	rtl_socket_connection_close(ssl->sc);
-	SSL_free(ssl->ssl);
-	SSL_CTX_free(ssl->ctx);
+	fclose(fp);
 
 	return ret;
 }
 
-void rtl_https_end_request(struct ssl *ssl)
+void rtl_https_close_connection(struct rtl_https_connection *hc)
 {
-	SSL_shutdown(ssl->ssl);
-	rtl_socket_connection_close(ssl->sc);
-	SSL_free(ssl->ssl);
-	SSL_CTX_free(ssl->ctx);
+	SSL_shutdown(hc->ssl);
+	SSL_free(hc->ssl);
+	SSL_CTX_free(hc->ctx);
+	rtl_socket_connection_close(hc->sc);
+	free(hc);
 }
