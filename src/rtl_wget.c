@@ -34,10 +34,9 @@ static int wget_https(const char *filename, const char *path, const char *host,
 }
 
 /* so far, just support http and https */
-int rtl_wget(const char *orignal_url)
+int rtl_wget(const char *orignal_url, const char *filename)
 {
-	char *filename = rtl_url_get_file_name(orignal_url);
-	if (!filename)
+	if (!filename || !orignal_url)
 		return -1;
 
 	rtl_url_field_t *url = rtl_url_parse(orignal_url);
