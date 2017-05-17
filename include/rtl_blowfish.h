@@ -7,8 +7,8 @@
 #define RTL_BLOWFISH_BLOCK_SIZE	8	/* Blowfish operates on 8 bytes at a time */
 
 typedef struct {
-   uint32_t p[18];
-   uint32_t s[4][256];
+	uint32_t p[18];
+	uint32_t s[4][256];
 } rtl_blowfish_key_t;
 
 void rtl_blowfish_key_setup(const uint8_t user_key[], rtl_blowfish_key_t *keystruct, size_t len);
