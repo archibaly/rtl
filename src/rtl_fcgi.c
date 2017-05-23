@@ -606,7 +606,7 @@ int rtl_fcgi_finish(rtl_fcgi_t *fcgi)
 	}
 	if (fcgi->conn_sock >= 0) {
 		ret = fcgi_end(fcgi);
-		fcgi_close(fcgi, 1, 1);
+		fcgi_close(fcgi, 0, 1);
 	}
 	return ret;
 }

@@ -21,12 +21,9 @@ static void on_read(struct rtl_event *e, void *args)
 			rtl_event_destroy(e);
 			break;
 		} else {
-			if (errno == EAGAIN) {
-				break;
-			} else {
+			if (errno != EAGAIN)
 				rtl_event_destroy(e);
-				break;
-			}
+			break;
 		}
 	}
 }
