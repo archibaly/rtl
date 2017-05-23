@@ -14,12 +14,11 @@
 #include <ifaddrs.h>
 
 #include "rtl_socket.h"
+#include "rtl_url.h"
 
 #define MTU					(1500 - 42 - 200)
 #define MAX_RETRY_CNT		3
 #define MAX_ADDR_LEN		65
-
-#define USE_IPV6			0
 
 static struct rtl_socket_connection *_rtl_socket_connect(int type,
 		const char *host, uint16_t port)
@@ -71,35 +70,20 @@ fail:
 	return NULL;
 }
 
-static int is_ipv4(const char *str)
-{
-	if (str == NULL)
-		return 0;
-	while (*str) {
-		if (isdigit(*str) || *str == '.')
-			str++;
-		else
-			return 0;
-	}
-	return 1;
-}
-
 static int get_ip(char *ip, const char *host)
 {
 	rtl_socket_addr_list_t *list;
 
-	if (!is_ipv4(host)) {
+	if (rtl_host_is_ipv4(host)) {
+		strncpy(ip, host, INET_ADDRSTRLEN);
+	} else {
 		if (rtl_socket_getaddrinfo(&list, host, NULL) < 0)
 			return -1;
 		rtl_socket_addr_ntop(ip, list->addr.ip);
 		rtl_socket_free_addr_list(list);
-	} else {
-		strncpy(ip, host, INET_ADDRSTRLEN);
 	}
-
 	return 0;
 }
-
 
 struct rtl_socket_connection *rtl_socket_tcp_connect(const char *host, uint16_t port)
 {
@@ -337,11 +321,7 @@ int rtl_socket_getaddrinfo(rtl_socket_addr_list_t **al, const char *domain, cons
 	rtl_socket_addr_list_t *ap, *an;
 
 	memset(&hints, 0, sizeof(struct addrinfo));
-#if USE_IPV6
-	hints.ai_family = AF_UNSPEC;   /* Allows IPv4 or IPv6 */
-#else
-	hints.ai_family = AF_INET;   /* Allows IPv4 or IPv6 */
-#endif
+	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 	hints.ai_flags = AI_CANONNAME;
@@ -352,8 +332,7 @@ int rtl_socket_getaddrinfo(rtl_socket_addr_list_t **al, const char *domain, cons
 		return -1;
 	}
 
-	ap = NULL;
-	*al = NULL;
+	ap = *al = NULL;
 	for (rp = ai_list; rp != NULL; rp = rp->ai_next ) {
 		an = (rtl_socket_addr_list_t *)calloc(sizeof(rtl_socket_addr_list_t), 1);
 		if (!an)

@@ -41,6 +41,7 @@ typedef struct {
 } rtl_url_field_t;
 
 int rtl_host_is_ipv4(const char *str);
+int rtl_host_is_ipv6(const char *str);
 rtl_url_field_t *rtl_url_parse(const char *str);
 void rtl_url_free(rtl_url_field_t *url);
 void rtl_url_field_print(rtl_url_field_t *url);

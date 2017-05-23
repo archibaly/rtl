@@ -11,14 +11,14 @@ static char hex[] = "0123456789ABCDEF";
 
 int rtl_host_is_ipv4(const char *str)
 {
-	int ret;
-	struct in_addr ipv4_addr;
+	struct sockaddr_in sa;
+	return inet_pton(AF_INET, str, &(sa.sin_addr)) != 0;
+}
 
-	ret = inet_pton(AF_INET, str, &ipv4_addr);
-
-	if (ret == 1)
-		return 1;
-	return 0;
+int rtl_host_is_ipv6(const char *str)
+{
+    struct sockaddr_in6 sa;
+    return inet_pton(AF_INET6, str, &(sa.sin6_addr)) != 0;
 }
 
 static void parse_query(rtl_url_field_t *url, char *query)
