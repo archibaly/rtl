@@ -12,6 +12,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <sys/select.h>
 
 #include "rtl_fcgi.h"
 #include "rtl_readn.h"

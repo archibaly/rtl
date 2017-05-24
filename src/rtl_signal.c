@@ -1,6 +1,6 @@
 #include "rtl_signal.h"
 
-__sighandler_t rtl_signal(int signo, __sighandler_t func)
+sighandler_t rtl_signal(int signo, sighandler_t func)
 {
 	struct sigaction act, oact;
 
@@ -8,9 +8,13 @@ __sighandler_t rtl_signal(int signo, __sighandler_t func)
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = 0;
 	if (signo == SIGALRM) {
+#ifdef SA_INTERRUPT
 		act.sa_flags |= SA_INTERRUPT;
+#endif
 	} else {
+#ifdef SA_RESTART
 		act.sa_flags |= SA_RESTART;
+#endif
 	}
 	if (sigaction(signo, &act, &oact) < 0)
 		return SIG_ERR;

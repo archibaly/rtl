@@ -1,6 +1,7 @@
 #ifndef _RTL_SOCKET_H_
 #define _RTL_SOCKET_H_
 
+#define _GNU_SOURCE
 #include <stdint.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>

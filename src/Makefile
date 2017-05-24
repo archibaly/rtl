@@ -1,18 +1,16 @@
-CC = cc
-AR = ar
-INCLUDE_DIR = ../include
-LIBRARY_DIR = ../lib
+CC:=cc
+AR:=ar
+INCLUDE_DIR:=../include
+LIBRARY_DIR:=../lib
 
-SONAME = librtl.so.0
-CFLAGS = -Wall -fPIC -I$(INCLUDE_DIR) -DDEBUG
-LDFLAGS = -Wl,-soname,$(SONAME) -shared
+SONAME:=librtl.so.0
+CFLAGS:=-Wall -fPIC -I$(INCLUDE_DIR) -DDEBUG
+LDFLAGS:=-Wl,-soname,$(SONAME) -shared
 
-MAJOR_VERSION = 0
-MICRO_VERSION = 9
-MINOR_VERSION = 6
+VERSION:=0.9.6
 
-LIB.a = librtl.a
-LIB.so = librtl.so.$(MAJOR_VERSION).$(MICRO_VERSION).$(MINOR_VERSION)
+LIB.a:=librtl.a
+LIB.so:=librtl.so.$(VERSION)
 
 OBJS = rtl_json.o rtl_config.o rtl_crc32.o rtl_hash.o rtl_http.o rtl_https.o \
 	   rtl_inet.o rtl_kmp.o rtl_flock.o rtl_log.o rtl_md5.o rtl_str.o \

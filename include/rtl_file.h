@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/uio.h>
+#include <time.h>
 
 typedef enum file_open_mode {
 	RTL_F_RDONLY,
