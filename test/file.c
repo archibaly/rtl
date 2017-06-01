@@ -47,10 +47,13 @@ static void foo(void)
 static void foo2(void)
 {
 	struct rtl_file_systat *stat = rtl_file_get_systat("/var/run/crond.pid");
+	if (!stat)
+		return;
 	printf("total = %zuMB\n", stat->size_total/(1024*1024));
 	printf("avail = %zuMB\n", stat->size_avail/(1024*1024));
 	printf("free = %zuMB\n", stat->size_free/(1024*1024));
 	printf("fs type name = %s\n", stat->fs_type_name);
+	free(stat);
 }
 
 static void foo3(void)

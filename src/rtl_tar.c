@@ -283,6 +283,8 @@ static int create(const char *filename, int compress, const char **argv)
 
 	while (*argv != NULL) {
 		struct archive *disk = archive_read_disk_new();
+		if (!disk)
+			goto out;
 
 #ifndef NO_LOOKUP
 		archive_read_disk_set_standard_lookup(disk);
@@ -293,6 +295,7 @@ static int create(const char *filename, int compress, const char **argv)
 		if (r != ARCHIVE_OK) {
 			errmsg(archive_error_string(disk));
 			errmsg("\n");
+			archive_read_free(disk);
 			goto out;
 		}
 
@@ -309,7 +312,7 @@ static int create(const char *filename, int compress, const char **argv)
 				errmsg(archive_error_string(disk));
 				errmsg("\n");
 				archive_entry_free(entry);
-				goto out;
+				break;
 			}
 			archive_read_disk_descend(disk);
 			if (verbose) {
@@ -325,7 +328,7 @@ static int create(const char *filename, int compress, const char **argv)
 			}
 			if (r == ARCHIVE_FATAL) {
 				archive_entry_free(entry);
-				goto out;
+				break;
 			}
 			if (r > ARCHIVE_FAILED) {
 #if 0
@@ -376,6 +379,10 @@ static int extract(const char *filename, int do_extract, int flags)
 
 	a = archive_read_new();
 	ext = archive_write_disk_new();
+	if (!ext) {
+		archive_read_free(a);
+		return -1;
+	}
 	archive_write_disk_set_options(ext, flags);
 #ifndef NO_BZIP2_EXTRACT
 	archive_read_support_filter_bzip2(a);
@@ -401,6 +408,7 @@ static int extract(const char *filename, int do_extract, int flags)
 		errmsg(archive_error_string(a));
 		errmsg("\n");
 		archive_read_free(a);
+		archive_write_free(a);
 		return -1;
 	}
 	for (;;) {
@@ -440,6 +448,7 @@ static int extract(const char *filename, int do_extract, int flags)
 out:
 	archive_read_close(a);
 	archive_read_free(a);
+	archive_write_free(ext);
 	return ret;
 }
 

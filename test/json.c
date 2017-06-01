@@ -11,6 +11,7 @@ int main()
 
 	char *str = rtl_json_print(root);
 	printf("%s\n", str);
+	free(str);
 
 	rtl_json_add_number_to_object(root, "type", 1);
 	rtl_json_add_string_to_object(root, "mac", "00117F934A02");

@@ -35,7 +35,7 @@ char *rtl_strrtrim(char *dst, const char *src, size_t siz)
 	len = pos + 1;
 	if (siz < len + 1)
 		return NULL;
-	memcpy(dst, src, len);
+	memmove(dst, src, len);
 	dst[len] = '\0';
 	return dst;
 }

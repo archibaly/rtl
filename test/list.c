@@ -61,16 +61,15 @@ int main()
 	rtl_list_head_init(&head);
 
 	add(&head, "jacky", 25);
-	add(&head, "tom", 28);
-	add(&head, "merry", 13);
-
-	del(&head, "tom");
+	add(&head, "tom", 13);
 
 	struct student *s;
 	s = find(&head, "jacky");
 
 	if (s) {
 		printf("s->name = %s, s->age = %d\n", s->name, s->age);
+		del(&head, "jacky");
+		free(s);
 	} else {
 		printf("can not find!\n");
 	}
@@ -78,6 +77,8 @@ int main()
 	s = find(&head, "tom");
 	if (s) {
 		printf("s->name = %s, s->age = %d\n", s->name, s->age);
+		del(&head, "tom");
+		free(s);
 	} else {
 		printf("can not find!\n");
 	}
