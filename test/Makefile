@@ -28,7 +28,7 @@ inet: inet.o
 	$(CC) -o $@ $< $(LDFLAGS)
 
 json: json.o
-	$(CC) -o $@ $< $(LDFLAGS) -lm
+	$(CC) -o $@ $< $(LDFLAGS)
 
 list: list.o
 	$(CC) -o $@ $< $(LDFLAGS)
