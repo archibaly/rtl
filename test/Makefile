@@ -2,7 +2,7 @@ include Makefile.in
 
 EXE = base64 blowfish dir file hash http inet json \
 	list pid proc sha1 sha256 shm socket spt str thread url wget \
-	fcgi tar
+	fcgi tar rbtree
 
 all: $(EXE)
 
@@ -71,6 +71,9 @@ fcgi: fcgi.o
 
 tar: tar.o
 	$(CC) -o $@ $< $(LDFLAGS) -larchive
+
+rbtree: rbtree.o
+	$(CC) -o $@ $< $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<

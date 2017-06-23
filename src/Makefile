@@ -7,7 +7,7 @@ SONAME:=librtl.so.0
 CFLAGS:=-Wall -fPIC -I$(INCLUDE_DIR) -DDEBUG
 LDFLAGS:=-Wl,-soname,$(SONAME) -shared
 
-VERSION:=0.9.6
+VERSION:=0.9.7
 
 LIB.a:=librtl.a
 LIB.so:=librtl.so.$(VERSION)
@@ -19,7 +19,7 @@ OBJS = rtl_json.o rtl_config.o rtl_crc32.o rtl_hash.o rtl_http.o rtl_https.o \
 	   rtl_spt.o rtl_tea.o rtl_iconv.o rtl_shm.o rtl_sem.o rtl_proc.o rtl_table.o \
 	   rtl_lock.o rtl_thread.o rtl_event.o rtl_epoll.o rtl_sha1.o rtl_sha256.o \
 	   rtl_base64.o rtl_blowfish.o rtl_file.o rtl_fio.o rtl_io.o rtl_fcgi.o \
-	   rtl_tar.o
+	   rtl_tar.o rtl_rbtree.o
 
 all: $(LIBRARY_DIR)/$(LIB.a) $(LIBRARY_DIR)/$(LIB.so)
 
