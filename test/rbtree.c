@@ -12,16 +12,16 @@ struct mynode {
   	char *string;
 };
 
-struct rtl_rb_root mytree = RTL_RB_ROOT;
+static struct rtl_rb_root mytree = RTL_RB_ROOT;
 
 struct mynode *my_search(struct rtl_rb_root *root, char *string)
 {
   	struct rtl_rb_node *node = root->rb_node;
+	struct mynode *data;
+	int result;
 
   	while (node) {
-  		struct mynode *data = rtl_rb_entry(node, struct mynode, node);
-		int result;
-
+  		data = rtl_rb_entry(node, struct mynode, node);
 		result = strcmp(string, data->string);
 
 		if (result < 0)
@@ -36,12 +36,15 @@ struct mynode *my_search(struct rtl_rb_root *root, char *string)
 
 int my_insert(struct rtl_rb_root *root, struct mynode *data)
 {
-  	struct rtl_rb_node **new = &(root->rb_node), *parent = NULL;
+  	struct rtl_rb_node **new = &(root->rb_node);
+	struct rtl_rb_node *parent = NULL;
+	struct mynode *this;
+	int result;
 
   	/* Figure out where to put new node */
   	while (*new) {
-  		struct mynode *this = rtl_rb_entry(*new, struct mynode, node);
-  		int result = strcmp(data->string, this->string);
+  		this = rtl_rb_entry(*new, struct mynode, node);
+  		result = strcmp(data->string, this->string);
 
 		parent = *new;
   		if (result < 0)
@@ -49,7 +52,7 @@ int my_insert(struct rtl_rb_root *root, struct mynode *data)
   		else if (result > 0)
   			new = &((*new)->rb_right);
   		else
-  			return 0;
+  			return 1;
   	}
 
   	/* Add new node and rebalance tree. */
