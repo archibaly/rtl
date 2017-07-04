@@ -260,3 +260,22 @@ int rtl_mac_str_to_hex(const char *str, unsigned char *mac, size_t size)
 	free(tmp);
 	return 0;
 }
+
+/*
+ * 10.x.x.x -> 0xA
+ * 172.16.x.x ~ 172.31.x.x -> 0xAC1
+ * 192.168.x.x -> 0xC0A8
+ */
+int rtl_is_inner_ip(const char *ip)
+{
+	struct in_addr addr;
+	uint32_t hostip;
+
+	if (inet_pton(AF_INET, ip, &addr) <= 0)
+		return 0;
+
+	hostip = ntohl(addr.s_addr);
+	return (hostip >> 24 == 0xA ||
+			hostip >> 20 == 0xAC1 ||
+			hostip >> 16 == 0xC0A8);
+}
