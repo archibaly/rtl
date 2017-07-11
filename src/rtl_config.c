@@ -5,50 +5,78 @@
 #include <ctype.h>
 
 #include "rtl_hash.h"
-#include "rtl_debug.h"
 #include "rtl_config.h"
 
 #define END_LINE(c)			(c == '\n' || c == '\0')
-#define HASH_NUM_BUCKETS	37
+
+struct config_item {
+	char *key;
+	char *value;
+	rtl_hash_handle_t hh;
+};
 
 static char delim = '=';
 static char comment = '#';
-
-static struct rtl_hash_table *config_table;
+static struct config_item *items;
 
 int rtl_config_add(const char *key, const char *value)
 {
-	void *v;
+	struct config_item *c;
 
-	if (rtl_hash_find(config_table, key, &v, 1) > 0)
-		rtl_hash_del(config_table, key);
+	RTL_HASH_FIND_STR(items, key, c);
+	if (!c) {
+		c = malloc(sizeof(struct config_item));
+		if (!c)
+			return -1;
+		c->key = strdup(key);
+		if (!c->key) {
+			free(c);
+			return -1;
+		}
+		c->value = strdup(value);
+		if (!c->value) {
+			free(c->key);
+			free(c);
+			return -1;
+		}
+		RTL_HASH_ADD_STR(items, key, c);
+	}
 
-	return rtl_hash_add(config_table, key, strlen(key) + 1, value, strlen(value) + 1);
+	return 0;
 }
 
 void rtl_config_del(const char *key)
 {
-	void *value;
+	struct config_item *c;
 
-	if (rtl_hash_find(config_table, key, &value, 1) == 0)
+	RTL_HASH_FIND_STR(items, key, c);
+	if (!c)
 		return;
-	rtl_hash_del(config_table, key);
+
+	RTL_HASH_DEL(items, c);
+	free(c->key);
+	free(c->value);
+	free(c);
 }
 
 char *rtl_config_get_value(const char *key)
 {
-	void *value;
-	int n = rtl_hash_find(config_table, key, &value, 1);
+	struct config_item *c;
 
-	if (n == 0)
+	RTL_HASH_FIND_STR(items, key, c);
+	if (!c)
 		return NULL;
-	else
-		return value;
+	return c->value;
 }
 
 void rtl_config_set_delim(char d)
 {
 	delim = d;
+}
+
+void rtl_config_set_comment(char c)
+{
+	comment = c;
 }
 
 static int parse_line(char *string)
@@ -62,11 +90,11 @@ static int parse_line(char *string)
 	while ((c = *string++) != '\0') {
 		if (c == '"') {
 			if (!have_key) {
-				rtl_debug("unexpected '%c'", '"');
+				fprintf(stderr, "unexpected '%c'", '"');
 				return -1;
 			}
 			if (have_quote && !END_LINE(*string)) {
-				rtl_debug("unexpected '%c' after '%c'", *string, '"');
+				fprintf(stderr, "unexpected '%c' after '%c'", *string, '"');
 				return -1;
 			}
 			have_quote = !have_quote;
@@ -76,7 +104,7 @@ static int parse_line(char *string)
 				value[i++] = c;
 		} else if (c == delim) {
 			if (have_key) {
-				rtl_debug("unexpected '%c'", delim);
+				fprintf(stderr, "unexpected '%c'", delim);
 				return -1;
 			}
 			have_key = 1;
@@ -95,11 +123,11 @@ static int parse_line(char *string)
 	value[i] = '\0';
 
 	if (!have_key) {
-		rtl_debug("do not have key");
+		fprintf(stderr, "do not have key");
 		return -1;
 	}
 	if (have_quote) {
-		rtl_debug("need another quote");
+		fprintf(stderr, "need another quote");
 		return -1;
 	}
 
@@ -111,13 +139,8 @@ int rtl_config_load(const char *filename)
 	FILE *fp;
 	char line[1024];
 
-	if (!(config_table = rtl_hash_init(HASH_NUM_BUCKETS, RTL_HASH_KEY_TYPE_STR)))
+	if (!(fp = fopen(filename, "r")))
 		return -1;
-
-	if (!(fp = fopen(filename, "r"))) {
-		rtl_hash_destroy(config_table);
-		return -1;
-	}
 
 	while (fgets(line, sizeof(line), fp)) {
 		/* ignore lines that start with a comment or '\n' character */
@@ -126,7 +149,7 @@ int rtl_config_load(const char *filename)
 
 		if (parse_line(line) < 0) {
 			fclose(fp);
-			rtl_hash_destroy(config_table);
+			rtl_config_free();
 			return -1;
 		}
 	}
@@ -149,24 +172,20 @@ int rtl_config_save(const char *filename)
 {
 	FILE *fp;
 	char line[1024];
+	struct config_item *pos, *tmp;
 
-	if (!config_table)
+	if (!items)
 		return -1;
 
 	if ((fp = fopen(filename, "w")) == NULL)
 		return -1;
 
-	int i;
-	struct rtl_hash_node *pos;
-
-	for (i = 0; i < HASH_NUM_BUCKETS; i++) {
-		rtl_hash_for_each_entry(pos, config_table->head + i) {
-			if (has_space(pos->value))
-				sprintf(line, "%s %c \"%s\"\n", (char *)pos->key, delim, (char *)pos->value);
-			else
-				sprintf(line, "%s %c %s\n", (char *)pos->key, delim, (char *)pos->value);
-			fputs(line, fp);
-		}
+	RTL_HASH_ITER(hh, items, pos, tmp) {
+		if (has_space(pos->value))
+			sprintf(line, "%s %c \"%s\"\n", (char *)pos->key, delim, (char *)pos->value);
+		else
+			sprintf(line, "%s %c %s\n", (char *)pos->key, delim, (char *)pos->value);
+		fputs(line, fp);
 	}
 
 	fclose(fp);
@@ -175,6 +194,13 @@ int rtl_config_save(const char *filename)
 
 void rtl_config_free(void)
 {
-	rtl_hash_destroy(config_table);
-	config_table = NULL;
+	struct config_item *pos, *tmp;
+
+	RTL_HASH_ITER(hh, items, pos, tmp) {
+		RTL_HASH_DEL(items, pos);
+		free(pos->key);
+		free(pos->value);
+		free(pos);
+	}
+	items = NULL;
 }

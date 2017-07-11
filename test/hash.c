@@ -1,65 +1,150 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>				/* fgets */
+#include <stdlib.h>				/* atoi, malloc */
+#include <string.h>				/* strcpy */
 
-#include <rtl_hash.h>
+#include "rtl_hash.h"
 
-#define array_size(x)	(sizeof(x) / sizeof(x[0]))
+struct my_struct {
+	int id;						/* key */
+	char name[16];
+	rtl_hash_handle_t hh;			/* makes this structure hashable */
+};
 
-int main()
+struct my_struct *users = NULL;
+
+void add_user(int user_id, char *name)
 {
-	struct rtl_hash_table *table;
-	table = rtl_hash_init(31, RTL_HASH_KEY_TYPE_STR);
-	if (!table)
-		return -1;
+	struct my_struct *s;
 
-	rtl_hash_add(table, "123", sizeof("123"), "value1", sizeof("value1"));
-	rtl_hash_add(table, "123", sizeof("123"), "valuex", sizeof("valuex"));
-	rtl_hash_add(table, "123", sizeof("123"), "value3", sizeof("valuex"));
-	rtl_hash_add(table, "123", sizeof("123") , "valuex", sizeof("valuex"));
-	rtl_hash_add(table, "123", sizeof("123") , "valuex", sizeof("valuex"));
-	rtl_hash_add(table, "aece", sizeof("aece") , "value2", sizeof("value2"));
-	rtl_hash_add(table, "0uej", sizeof("0uej") , "value3", sizeof("value3"));
+	RTL_HASH_FIND_INT(users, &user_id, s);	/* id already in the hash? */
+	if (s == NULL) {
+		s = (struct my_struct *)malloc(sizeof(struct my_struct));
+		s->id = user_id;
+		RTL_HASH_ADD_INT(users, id, s);	/* id: name of key field */
+	}
+	strcpy(s->name, name);
+}
 
-	void *value[4];
+struct my_struct *find_user(int user_id)
+{
+	struct my_struct *s;
 
-	int n = rtl_hash_find(table, "123", value, array_size(value));
-	printf("n = %d\n", n);
+	RTL_HASH_FIND_INT(users, &user_id, s);	/* s: output pointer */
+	return s;
+}
 
-	int i;
-	if (n > 0) {
-		for (i = 0; i < n && i < array_size(value); i++)
-			printf("node[%d]->value = %s\n", i, (char *)value[i]);
-	} else {
-		printf("can not find\n");
+void delete_user(struct my_struct *user)
+{
+	RTL_HASH_DEL(users, user);		/* user: pointer to deletee */
+	free(user);
+}
+
+void delete_all(void)
+{
+	struct my_struct *current_user, *tmp;
+
+	RTL_HASH_ITER(hh, users, current_user, tmp) {
+		RTL_HASH_DEL(users, current_user);	/* delete it (users advances to next) */
+		free(current_user);		/* free it */
+	}
+}
+
+void print_users(void)
+{
+	struct my_struct *s;
+
+	for (s = users; s != NULL; s = (struct my_struct *)(s->hh.next))
+		printf("user id %d: name %s\n", s->id, s->name);
+}
+
+int name_sort(struct my_struct *a, struct my_struct *b)
+{
+	return strcmp(a->name, b->name);
+}
+
+int id_sort(struct my_struct *a, struct my_struct *b)
+{
+	return (a->id - b->id);
+}
+
+void sort_by_name(void)
+{
+	RTL_HASH_SORT(users, name_sort);
+}
+
+void sort_by_id(void)
+{
+	RTL_HASH_SORT(users, id_sort);
+}
+
+int main(int argc, char *argv[])
+{
+	char in[16];
+	int id = 1, running = 1;
+	struct my_struct *s;
+	unsigned num_users;
+
+	while (running) {
+		printf(" 1. add user\n");
+		printf(" 2. add/rename user by id\n");
+		printf(" 3. find user\n");
+		printf(" 4. delete user\n");
+		printf(" 5. delete all users\n");
+		printf(" 6. sort items by name\n");
+		printf(" 7. sort items by id\n");
+		printf(" 8. print users\n");
+		printf(" 9. count users\n");
+		printf("10. quit\n");
+		printf("Please enter your choice: ");
+		fgets(in, 16, stdin);
+		switch (atoi(in)) {
+		case 1:
+			printf("name?\n");
+			add_user(id++, fgets(in, 16, stdin));
+			break;
+		case 2:
+			printf("id?\n");
+			fgets(in, 16, stdin);
+			id = atoi(in);
+			printf("name?\n");
+			add_user(id, fgets(in, 16, stdin));
+			break;
+		case 3:
+			printf("id?\n");
+			s = find_user(atoi(fgets(in, 16, stdin)));
+			printf("user: %s\n", s ? s->name : "unknown");
+			break;
+		case 4:
+			printf("id?\n");
+			s = find_user(atoi(fgets(in, 16, stdin)));
+			if (s) {
+				delete_user(s);
+			} else {
+				printf("id unknown\n");
+			}
+			break;
+		case 5:
+			delete_all();
+			break;
+		case 6:
+			sort_by_name();
+			break;
+		case 7:
+			sort_by_id();
+			break;
+		case 8:
+			print_users();
+			break;
+		case 9:
+			num_users = RTL_HASH_COUNT(users);
+			printf("there are %u users\n", num_users);
+			break;
+		case 10:
+			running = 0;
+			break;
+		}
 	}
 
-	rtl_hash_destroy(table);
-
-	table = rtl_hash_init(32, RTL_HASH_KEY_TYPE_INT);
-	if (!table)
-		return -1;
-
-	int key = 1;
-	rtl_hash_add(table, &key, sizeof(key), "value1", sizeof("value1"));
-	key = 1;
-	rtl_hash_add(table, &key, sizeof(key), "valuex", sizeof("valuex"));
-	key = 3;
-	rtl_hash_add(table, &key, sizeof(key), "value2", sizeof("value2"));
-	key = 4;
-	rtl_hash_add(table, &key, sizeof(key), "value3", sizeof("value3"));
-
-	key = 1;
-	n = rtl_hash_find(table, &key, value, array_size(value));
-
-	if (n > 0) {
-		for (i = 0; i < n && i < array_size(value); i++)
-			printf("node[%d]->value = %s\n", i, (char *)value[i]);
-	} else {
-		printf("can not find\n");
-	}
-
-	rtl_hash_destroy(table);
-
+	delete_all();				/* free any structures */
 	return 0;
 }

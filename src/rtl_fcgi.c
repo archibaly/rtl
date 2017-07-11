@@ -62,6 +62,12 @@ typedef struct fcgi_end_request_rec {
 	fcgi_end_request_t body;
 } fcgi_end_request_rec_t;
 
+struct env_item {
+	char *name;
+	char *value;
+	rtl_hash_handle_t hh;
+};
+
 struct rtl_fcgi {
 	int listen_sock;
 	int conn_sock;
@@ -69,7 +75,7 @@ struct rtl_fcgi {
 	int keep;
 	int ended;
 
-	struct rtl_hash_table *env;
+	struct env_item *env;
 
 	int in_len;
 	unsigned char *in_buf;
@@ -88,6 +94,55 @@ typedef union sa {
 } sa_t;
 
 static int fcgi_read_request();
+
+static int env_add(struct env_item *env, const char *name, const char *value)
+{
+	struct env_item *e;
+
+	RTL_HASH_FIND_STR(env, name, e);
+	if (!e) {
+		e = malloc(sizeof(struct env_item));
+		if (!e)
+			return -1;
+		e->name = strdup(name);
+		if (!e->name) {
+			free(e);
+			return -1;
+		}
+		e->value = strdup(value);
+		if (!e->value) {
+			free(e->name);
+			free(e);
+			return -1;
+		}
+		RTL_HASH_ADD_STR(env, name, e);
+	}
+
+	return 0;
+}
+
+static char *env_find(struct env_item *env, const char *name)
+{
+	struct env_item *e;
+
+	RTL_HASH_FIND_STR(env, name, e);
+	if (!e)
+		return NULL;
+	return e->value;
+}
+
+static void env_destroy(struct env_item *env)
+{
+	struct env_item *pos, *tmp;
+
+	RTL_HASH_ITER(hh, env, pos, tmp) {
+		RTL_HASH_DEL(env, pos);
+		free(pos->name);
+		free(pos->value);
+		free(pos);
+	}
+	env = NULL;
+}
 
 static void fcgi_signal_handler(int signo)
 {
@@ -196,13 +251,6 @@ rtl_fcgi_t *rtl_fcgi_init(const char *path, uint16_t port)
 		return NULL;
 	}
 
-	fcgi->env = rtl_hash_init(HASH_BUKET_SIZE, RTL_HASH_KEY_TYPE_STR);
-	if (!fcgi->env) {
-		close(fcgi->listen_sock);
-		free(fcgi);
-		return NULL;
-	}
-
 	fcgi->conn_sock = -1;
 	fcgi->id = -1;
 
@@ -211,8 +259,10 @@ rtl_fcgi_t *rtl_fcgi_init(const char *path, uint16_t port)
 
 static void fcgi_close(rtl_fcgi_t *fcgi, int force, int destroy)
 {
-	if (destroy)
-		rtl_hash_free_nodes(fcgi->env);
+	if (destroy) {
+		if (fcgi->env)
+			env_destroy(fcgi->env);
+	}
 
 	char buf[8];
 	if ((force || !fcgi->keep) && fcgi->conn_sock >= 0) {
@@ -295,7 +345,7 @@ static int fcgi_get_params(rtl_fcgi_t *fcgi, unsigned char *p, unsigned char *en
 		memcpy(value, p + name_len, val_len);
 		value[val_len] = '\0';
 
-		rtl_hash_add(fcgi->env, name, strlen(name) + 1, value, strlen(value) + 1);
+		env_add(fcgi->env, name, value);
 		p += name_len + val_len;
 	}
 	return 0;
@@ -333,13 +383,13 @@ static int fcgi_read_request(rtl_fcgi_t *fcgi)
 
 		switch ((b->roleB1 << 8) + b->roleB0) {
 			case RTL_FCGI_RESPONDER:
-				rtl_hash_add(fcgi->env, "FCGI_ROLE", sizeof("FCGI_ROLE"), "RESPONDER", sizeof("RESPONDER"));
+				env_add(fcgi->env, "FCGI_ROLE", "RESPONDER");
 				break;
 			case RTL_FCGI_AUTHORIZER:
-				rtl_hash_add(fcgi->env, "FCGI_ROLE", sizeof("FCGI_ROLE"), "AUTHORIZER", sizeof("AUTHORIZER"));
+				env_add(fcgi->env, "FCGI_ROLE", "AUTHORIZER");
 				break;
 			case RTL_FCGI_FILTER:
-				rtl_hash_add(fcgi->env, "FCGI_ROLE", sizeof("FCGI_ROLE"), "FILTER", sizeof("FILTER"));
+				env_add(fcgi->env, "FCGI_ROLE", "FILTER");
 				break;
 			default:
 				return 0;
@@ -622,8 +672,5 @@ unsigned char *rtl_fcgi_get_stdin(rtl_fcgi_t *fcgi, int *len)
 
 char *rtl_fcgi_getenv(const rtl_fcgi_t *fcgi, const char *name)
 {
-	void *value;
-	if (rtl_hash_find(fcgi->env, name, &value, 1) == 0)
-		return NULL;
-	return value;
+	return env_find(fcgi->env, name);
 }
