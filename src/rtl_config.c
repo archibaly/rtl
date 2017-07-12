@@ -79,7 +79,7 @@ void rtl_config_set_comment(char c)
 	comment = c;
 }
 
-static int parse_line(char *string)
+static int parse_line(char *string, const char *filename, int line)
 {
 	char key[512], value[512], c;
 	int have_key, have_quote;
@@ -90,11 +90,13 @@ static int parse_line(char *string)
 	while ((c = *string++) != '\0') {
 		if (c == '"') {
 			if (!have_key) {
-				fprintf(stderr, "unexpected '%c'", '"');
+				fprintf(stderr, "unexpected '%c' in %s on line %d\n",
+						'"', filename, line);
 				return -1;
 			}
 			if (have_quote && !END_LINE(*string)) {
-				fprintf(stderr, "unexpected '%c' after '%c'", *string, '"');
+				fprintf(stderr, "unexpected '%c' after '%c' in %s \
+						on line %d\n", *string, '"', filename, line);
 				return -1;
 			}
 			have_quote = !have_quote;
@@ -104,7 +106,8 @@ static int parse_line(char *string)
 				value[i++] = c;
 		} else if (c == delim) {
 			if (have_key) {
-				fprintf(stderr, "unexpected '%c'", delim);
+				fprintf(stderr, "unexpected '%c' in %s on line %d\n",
+						delim, filename, line);
 				return -1;
 			}
 			have_key = 1;
@@ -123,11 +126,12 @@ static int parse_line(char *string)
 	value[i] = '\0';
 
 	if (!have_key) {
-		fprintf(stderr, "do not have key");
+		fprintf(stderr, "do not have key in %s on line %d\n", filename, line);
 		return -1;
 	}
 	if (have_quote) {
-		fprintf(stderr, "need another quote");
+		fprintf(stderr, "need another quote in %s on line %d\n", filename,
+				line);
 		return -1;
 	}
 
@@ -138,16 +142,17 @@ int rtl_config_load(const char *filename)
 {
 	FILE *fp;
 	char line[1024];
+	int i;
 
 	if (!(fp = fopen(filename, "r")))
 		return -1;
 
-	while (fgets(line, sizeof(line), fp)) {
+	for (i = 1; fgets(line, sizeof(line), fp); i++) {
 		/* ignore lines that start with a comment or '\n' character */
 		if (*line == comment || *line == '\n')
 			continue;
 
-		if (parse_line(line) < 0) {
+		if (parse_line(line, filename, i) < 0) {
 			fclose(fp);
 			rtl_config_free();
 			return -1;
