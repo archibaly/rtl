@@ -295,6 +295,13 @@ static unsigned char *ensure(printbuffer * const p, size_t needed)
 	if (p->hooks.reallocate != NULL) {
 		/* reallocate with realloc if available */
 		newbuffer = (unsigned char *)p->hooks.reallocate(p->buffer, newsize);
+		if (newbuffer == NULL) {
+			p->hooks.deallocate(p->buffer);
+			p->length = 0;
+			p->buffer = NULL;
+
+			return NULL;
+		}
 	} else {
 		/* otherwise reallocate manually */
 		newbuffer = (unsigned char *)p->hooks.allocate(newsize);
@@ -973,6 +980,7 @@ char *rtl_json_print_buffered(const rtl_json_t * item, int prebuffer, int fmt)
 	p.hooks = global_hooks;
 
 	if (!print_value(item, &p)) {
+		global_hooks.deallocate(p.buffer);
 		return NULL;
 	}
 
@@ -984,9 +992,8 @@ int rtl_json_print_preallocated(rtl_json_t * item, char *buf, const int len,
 {
 	printbuffer p = { 0, 0, 0, 0, 0, 0, {0, 0, 0} };
 
-	if (len < 0) {
+	if (len < 0 || buf == NULL)
 		return false;
-	}
 
 	p.buffer = (unsigned char *)buf;
 	p.length = (size_t) len;
@@ -1482,17 +1489,23 @@ static int print_object(const rtl_json_t * const item,
 /* Get array size/item / object item. */
 int rtl_json_get_array_size(const rtl_json_t * array)
 {
-	rtl_json_t *c = array->child;
-	size_t i = 0;
+	rtl_json_t *child = NULL;
+	size_t size = 0;
 
-	while (c) {
-		i++;
-		c = c->next;
+	if (array == NULL) {
+		return 0;
+	}
+
+	child = array->child;
+
+	while (child != NULL) {
+		size++;
+		child = child->next;
 	}
 
 	/* FIXME: Can overflow here. Cannot be fixed without breaking the API */
 
-	return (int)i;
+	return (int)size;
 }
 
 static rtl_json_t *get_array_item(const rtl_json_t * array, size_t index)
@@ -1579,16 +1592,19 @@ static void suffix_object(rtl_json_t * prev, rtl_json_t * item)
 static rtl_json_t *create_reference(const rtl_json_t * item,
 									const internal_hooks * const hooks)
 {
-	rtl_json_t *ref = rtl_json_new_item(hooks);
-
-	if (!ref) {
+	rtl_json_t *reference = NULL;
+	if (item == NULL)
 		return NULL;
-	}
-	memcpy(ref, item, sizeof(rtl_json_t));
-	ref->string = NULL;
-	ref->type |= RTL_JSON_IS_REFERENCE;
-	ref->next = ref->prev = NULL;
-	return ref;
+
+	reference = rtl_json_new_item(hooks);
+	if (reference == NULL)
+		return NULL;
+
+	memcpy(reference, item, sizeof(rtl_json_t));
+	reference->string = NULL;
+	reference->type |= RTL_JSON_IS_REFERENCE;
+	reference->next = reference->prev = NULL;
+	return reference;
 }
 
 /* Add item to array/object. */
@@ -1617,6 +1633,9 @@ void rtl_json_add_item_to_array(rtl_json_t * array, rtl_json_t * item)
 void rtl_json_add_item_to_object(rtl_json_t * object, const char *string,
 								 rtl_json_t * item)
 {
+	if (item == NULL)
+		return;
+
 	/* call rtl_json_add_item_to_objectCS for code reuse */
 	rtl_json_add_item_to_object_cs(object,
 								   (char *)
@@ -1631,9 +1650,9 @@ void rtl_json_add_item_to_object(rtl_json_t * object, const char *string,
 void rtl_json_add_item_to_object_cs(rtl_json_t * object, const char *string,
 									rtl_json_t * item)
 {
-	if (!item) {
+	if (item == NULL || string == NULL)
 		return;
-	}
+
 	if (!(item->type & RTL_JSON_STRING_IS_CONST) && item->string) {
 		global_hooks.deallocate(item->string);
 	}
@@ -1644,6 +1663,9 @@ void rtl_json_add_item_to_object_cs(rtl_json_t * object, const char *string,
 
 void rtl_json_add_item_reference_to_array(rtl_json_t * array, rtl_json_t * item)
 {
+	if (array == NULL)
+		return;
+
 	rtl_json_add_item_to_array(array, create_reference(item, &global_hooks));
 }
 
@@ -1651,6 +1673,9 @@ void rtl_json_add_item_reference_to_object(rtl_json_t * object,
 										   const char *string,
 										   rtl_json_t * item)
 {
+	if (object == NULL || string == NULL)
+		return;
+
 	rtl_json_add_item_to_object(object, string,
 								create_reference(item, &global_hooks));
 }
@@ -1757,7 +1782,7 @@ int rtl_json_replace_item_via_pointer(rtl_json_t * const parent,
 									  rtl_json_t * const item,
 									  rtl_json_t * replacement)
 {
-	if ((parent == NULL) || (replacement == NULL)) {
+	if ((parent == NULL) || (replacement == NULL) || (item == NULL)) {
 		return false;
 	}
 
@@ -1800,7 +1825,7 @@ void rtl_json_replace_item_inarray(rtl_json_t * array, int which,
 static int replace_item_in_object(rtl_json_t * object, const char *string,
 								  rtl_json_t * replacement, int case_sensitive)
 {
-	if (replacement == NULL) {
+	if (replacement == NULL || string == NULL) {
 		return false;
 	}
 
@@ -1965,7 +1990,7 @@ rtl_json_t *rtl_json_create_int_array(const int *numbers, int count)
 	rtl_json_t *p = NULL;
 	rtl_json_t *a = NULL;
 
-	if (count < 0) {
+	if (count < 0 || numbers == NULL) {
 		return NULL;
 	}
 
@@ -1994,7 +2019,7 @@ rtl_json_t *rtl_json_create_float_array(const float *numbers, int count)
 	rtl_json_t *p = NULL;
 	rtl_json_t *a = NULL;
 
-	if (count < 0) {
+	if (count < 0 || numbers == NULL) {
 		return NULL;
 	}
 
@@ -2024,7 +2049,7 @@ rtl_json_t *rtl_json_create_double_array(const double *numbers, int count)
 	rtl_json_t *p = NULL;
 	rtl_json_t *a = NULL;
 
-	if (count < 0) {
+	if (count < 0 || numbers == NULL) {
 		return NULL;
 	}
 
@@ -2054,7 +2079,7 @@ rtl_json_t *rtl_json_create_string_array(const char **strings, int count)
 	rtl_json_t *p = NULL;
 	rtl_json_t *a = NULL;
 
-	if (count < 0) {
+	if (count < 0 || strings == NULL) {
 		return NULL;
 	}
 
@@ -2152,6 +2177,9 @@ rtl_json_t *rtl_json_duplicate(const rtl_json_t * item, int recurse)
 void rtl_json_minify(char *json)
 {
 	unsigned char *into = (unsigned char *)json;
+
+	if (json == NULL)
+		return;
 
 	while (*json) {
 		if (*json == ' ') {
@@ -2351,24 +2379,37 @@ int rtl_json_compare(const rtl_json_t * const a, const rtl_json_t * const b,
 				b_element = b_element->next;
 			}
 
+			/* one of the arrays is longer than the other */
+			if (a_element != b_element)
+				return false;
+
 			return true;
 		}
 
 	case RTL_JSON_OBJECT:
 		{
 			rtl_json_t *a_element = NULL;
+			rtl_json_t *b_element = NULL;
 
 			rtl_json_array_for_each(a_element, a) {
 				/* TODO This has O(n^2) runtime, which is horrible! */
-				rtl_json_t *b_element =
-					get_object_item(b, a_element->string, case_sensitive);
-				if (b_element == NULL) {
+				b_element = get_object_item(b, a_element->string, case_sensitive);
+				if (b_element == NULL)
 					return false;
-				}
 
-				if (!rtl_json_compare(a_element, b_element, case_sensitive)) {
+				if (!rtl_json_compare(a_element, b_element, case_sensitive))
 					return false;
-				}
+			}
+
+			/* doing this twice, once on a and b to prevent true comparison if a subset of b
+			 * TODO: Do this the proper way, this is just a fix for now */
+			rtl_json_array_for_each(b_element, b) {
+				a_element = get_object_item(a, b_element->string, case_sensitive);
+				if (a_element == NULL)
+					return false;
+
+				if (!rtl_json_compare(b_element, a_element, case_sensitive))
+					return false;
 			}
 
 			return true;
