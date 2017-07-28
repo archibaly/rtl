@@ -37,7 +37,7 @@ pid: pid.o
 	$(CC) -o $@ $< $(LDFLAGS)
 
 proc: proc.o
-	$(CC) -o $@ $< $(LDFLAGS)
+	$(CC) -o $@ $< $(LDFLAGS) -lrt
 
 sha1: sha1.o
 	$(CC) -o $@ $< $(LDFLAGS)
@@ -58,7 +58,7 @@ str: str.o
 	$(CC) -o $@ $< $(LDFLAGS)
 
 thread: thread.o
-	$(CC) -o $@ $< $(LDFLAGS) -pthread
+	$(CC) -o $@ $< $(LDFLAGS) -pthread -lrt
 
 url: url.o
 	$(CC) -o $@ $< $(LDFLAGS)
