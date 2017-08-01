@@ -174,13 +174,12 @@ void rtl_ini_dump_ini(const rtl_dict_t *d, FILE *f)
 	}
 	for (i = 0; i < nsec; i++) {
 		secname = rtl_ini_get_sec_name(d, i);
-		rtl_ini_dumpsection_ini(d, secname, f);
+		rtl_ini_dump_section_ini(d, secname, f);
 	}
-	fprintf(f, "\n");
 	return;
 }
 
-void rtl_ini_dumpsection_ini(const rtl_dict_t *d, const char *s, FILE *f)
+void rtl_ini_dump_section_ini(const rtl_dict_t *d, const char *s, FILE *f)
 {
 	int j;
 	char keym[ASCIILINESZ + 1];
@@ -192,14 +191,13 @@ void rtl_ini_dumpsection_ini(const rtl_dict_t *d, const char *s, FILE *f)
 		return;
 
 	seclen = (int)strlen(s);
-	fprintf(f, "\n[%s]\n", s);
+	fprintf(f, "[%s]\n", s);
 	sprintf(keym, "%s:", s);
 	for (j = 0; j < d->size; j++) {
 		if (d->key[j] == NULL)
 			continue;
 		if (!strncmp(d->key[j], keym, seclen + 1)) {
-			fprintf(f,
-					"%-30s = %s\n",
+			fprintf(f, "\t%-16s = %s\n",
 					d->key[j] + seclen + 1, d->val[j] ? d->val[j] : "");
 		}
 	}

@@ -69,7 +69,7 @@ void rtl_ini_dump_ini(const rtl_dict_t *d, FILE *f);
  * This function dumps a given section of a given rtl_dict_t into a loadable ini
  * file.  It is Ok to specify @c stderr or @c stdout as output files.
  */
-void rtl_ini_dumpsection_ini(const rtl_dict_t *d, const char *s, FILE *f);
+void rtl_ini_dump_section_ini(const rtl_dict_t *d, const char *s, FILE *f);
 
 /**
  * @brief    Dump a rtl_dict_t to an opened file pointer.

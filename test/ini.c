@@ -65,7 +65,8 @@ int parse_ini_file(char *ini_name)
 		fprintf(stderr, "cannot parse file: %s\n", ini_name);
 		return -1;
 	}
-	rtl_ini_dump(ini, stderr);
+	rtl_ini_dump(ini, stdout);
+	rtl_ini_dump_ini(ini, stdout);
 
 	/* Get pizza attributes */
 	printf("Pizza:\n");
