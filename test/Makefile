@@ -1,6 +1,6 @@
 include Makefile.in
 
-EXE = base64 blowfish dir file hash http inet json \
+EXE = base64 blowfish dir file hash http https inet json \
 	list pid proc sha1 sha256 shm socket spt str thread url wget \
 	fcgi tar rbtree ini
 
@@ -22,6 +22,9 @@ hash: hash.o
 	$(CC) -o $@ $< $(LDFLAGS)
 
 http: http.o
+	$(CC) -o $@ $< $(LDFLAGS)
+
+https: https.o
 	$(CC) -o $@ $< $(LDFLAGS) -lssl
 
 inet: inet.o

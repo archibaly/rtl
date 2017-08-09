@@ -1,30 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "rtl_http_req.h"
-#include "rtl_http_resp.h"
-#include "rtl_socket.h"
+#include "rtl_https_req.h"
+#include "rtl_https_resp.h"
 
 int main()
 {
 	rtl_http_req_t *req;
 
-	req = rtl_http_req_new(RTL_HTTP_REQ_TYPE_GET, "www.baidu.com", 80,
+	req = rtl_http_req_new(RTL_HTTP_REQ_TYPE_GET, "www.baidu.com", 443,
 						   "/index.html");
 	if (!req)
 		return 1;
 
 	rtl_http_hdr_set_value(req->headers, RTL_HTTP_HDR_Connection, "close");
 
-	struct rtl_socket_connection *conn;
+	struct rtl_https_connection *conn;
 
-	if (!(conn = rtl_http_req_conn(req))) {
+	if (!(conn = rtl_https_req_conn(req))) {
 		rtl_http_req_destroy(req);
 		return 1;
 	}
 
-	if (rtl_http_req_send(req, conn, NULL, 0) < 0) {
-		rtl_http_req_discon(conn);
+	if (rtl_https_req_send(req, conn, NULL, 0) < 0) {
+		rtl_https_req_discon(conn);
 		rtl_http_req_destroy(req);
 		return 1;
 	}
@@ -34,11 +33,11 @@ int main()
 
 	resp = rtl_http_resp_new();
 	if (!resp) {
-		rtl_http_req_discon(conn);
+		rtl_https_req_discon(conn);
 		rtl_http_req_destroy(req);
 		return 1;
 	}
-	if (rtl_http_resp_read_hdrs(resp, conn) < 0) {
+	if (rtl_https_resp_read_hdrs(resp, conn) < 0) {
 		ret = 1;
 		goto out;
 	}
@@ -51,10 +50,10 @@ int main()
 	printf("Content-Length: %s\n", rtl_http_hdr_get_value(resp->headers,
 														  "Content-Length"));
 
-	rtl_http_resp_save_body_to_file(resp, conn, "index.html");
+	rtl_https_resp_save_body_to_file(resp, conn, "index.html");
 
 out:
-	rtl_http_req_discon(conn);
+	rtl_https_req_discon(conn);
 	rtl_http_req_destroy(req);
 	rtl_http_resp_destroy(resp);
 	return ret;

@@ -41,7 +41,7 @@ typedef struct rtl_socket_connection {
 
 /* socket tcp apis */
 struct rtl_socket_connection *rtl_socket_tcp_connect(const char *host, uint16_t port);
-void rtl_socket_connection_close(struct rtl_socket_connection *sc);
+void rtl_socket_disconnect(struct rtl_socket_connection *sc);
 int rtl_socket_tcp_bind_listen(const char *host, uint16_t port);
 int rtl_socket_accept(int fd, uint32_t *ip, uint16_t *port);
 

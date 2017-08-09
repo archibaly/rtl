@@ -103,7 +103,7 @@ struct rtl_socket_connection *rtl_socket_udp_connect(const char *host, uint16_t 
 	return _rtl_socket_connect(SOCK_DGRAM, ip, port);
 }
 
-void rtl_socket_connection_close(struct rtl_socket_connection *sc)
+void rtl_socket_disconnect(struct rtl_socket_connection *sc)
 {
 	close(sc->fd);
 	free(sc);
