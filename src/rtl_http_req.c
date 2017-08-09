@@ -124,14 +124,14 @@ int rtl_http_req_send(const rtl_http_req_t *req,
 
 	snprintf(buf, sizeof(buf), tpl, http_req_type_char[req->type], path, hdr);
 
-	if (rtl_socket_send(conn->fd, buf, strlen(buf)) < 0)
+	if (rtl_socket_sendn(conn->fd, buf, strlen(buf)) < 0)
 		return -1;
 
 	if ((req->type == RTL_HTTP_REQ_TYPE_POST) ||
 		(req->type == RTL_HTTP_REQ_TYPE_PUT) ||
 		(req->type == RTL_HTTP_REQ_TYPE_TRACE)) {
 		if (body && body_len > 0) {
-			if (rtl_socket_send(conn->fd, body, body_len) < 0)
+			if (rtl_socket_sendn(conn->fd, body, body_len) < 0)
 				return -1;
 		}
 	}
