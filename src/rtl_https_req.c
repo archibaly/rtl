@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "rtl_https_req.h"
 
 static int ssl_writen(SSL *ssl, const void *buf, int num)

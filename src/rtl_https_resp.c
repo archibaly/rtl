@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "rtl_https_resp.h"
 
 static inline int https_read_byte(rtl_http_resp_t *resp,
