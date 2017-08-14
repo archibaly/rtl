@@ -16,8 +16,11 @@ struct rtl_https_connection {
 
 struct rtl_https_connection *rtl_https_req_conn(rtl_http_req_t *req);
 void rtl_https_req_discon(struct rtl_https_connection *conn);
-int rtl_https_req_send(const rtl_http_req_t *req,
-					   struct rtl_https_connection *conn,
-					   const unsigned char *body, int body_len);
+int rtl_https_req_send_hdr(const rtl_http_req_t *req,
+						   struct rtl_https_connection *conn,
+						   int content_len);
+int rtl_https_req_send_body(const rtl_http_req_t *req,
+							struct rtl_https_connection *conn,
+							const unsigned char *body, int body_len);
 
 #endif /* _RTL_HTTPS_REQ_H_ */

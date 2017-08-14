@@ -88,9 +88,9 @@ void rtl_http_req_discon(struct rtl_socket_connection *conn)
 	conn = NULL;
 }
 
-int rtl_http_req_send(const rtl_http_req_t *req,
-					  struct rtl_socket_connection *conn,
-					  const unsigned char *body, int body_len)
+int rtl_http_req_send_hdr(const rtl_http_req_t *req,
+						  struct rtl_socket_connection *conn,
+						  int content_len)
 {
 	char len[12];
 	char hdr[4096];
@@ -110,8 +110,8 @@ int rtl_http_req_send(const rtl_http_req_t *req,
 	if ((req->type == RTL_HTTP_REQ_TYPE_POST) ||
 		(req->type == RTL_HTTP_REQ_TYPE_PUT) ||
 		(req->type == RTL_HTTP_REQ_TYPE_TRACE)) {
-		if (body && body_len > 0) {
-			snprintf(len, sizeof(len), "%d", body_len);
+		if (content_len > 0) {
+			snprintf(len, sizeof(len), "%d", content_len);
 			rtl_http_hdr_set_value(req->headers, RTL_HTTP_HDR_Content_Length, len);
 		}
 	}
@@ -124,17 +124,19 @@ int rtl_http_req_send(const rtl_http_req_t *req,
 
 	snprintf(buf, sizeof(buf), tpl, http_req_type_char[req->type], path, hdr);
 
-	if (rtl_socket_sendn(conn->fd, buf, strlen(buf)) < 0)
-		return -1;
+	return rtl_socket_sendn(conn->fd, buf, strlen(buf));
+}
 
+int rtl_http_req_send_body(const rtl_http_req_t *req,
+						   struct rtl_socket_connection *conn,
+						   const unsigned char *body, int body_len)
+{
 	if ((req->type == RTL_HTTP_REQ_TYPE_POST) ||
 		(req->type == RTL_HTTP_REQ_TYPE_PUT) ||
 		(req->type == RTL_HTTP_REQ_TYPE_TRACE)) {
-		if (body && body_len > 0) {
-			if (rtl_socket_sendn(conn->fd, body, body_len) < 0)
-				return -1;
-		}
+		if (body && body_len > 0)
+			return rtl_socket_sendn(conn->fd, body, body_len);
 	}
 
-	return 0;
+	return -1;
 }

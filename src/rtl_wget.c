@@ -27,7 +27,7 @@ static int wget_http(const char *filename, const char *host,
 	if (!(conn = rtl_http_req_conn(req)))
 		goto out1;
 
-	if (rtl_http_req_send(req, conn, NULL, 0) < 0)
+	if (rtl_http_req_send_hdr(req, conn, 0) < 0)
 		goto out2;
 
 	resp = rtl_http_resp_new();
@@ -65,7 +65,7 @@ static int wget_https(const char *filename, const char *host,
 	if (!(conn = rtl_https_req_conn(req)))
 		goto out1;
 
-	if (rtl_https_req_send(req, conn, NULL, 0) < 0)
+	if (rtl_https_req_send_hdr(req, conn, 0) < 0)
 		goto out2;
 
 	resp = rtl_http_resp_new();

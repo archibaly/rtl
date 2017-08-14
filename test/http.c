@@ -23,7 +23,7 @@ int main()
 		return 1;
 	}
 
-	if (rtl_http_req_send(req, conn, NULL, 0) < 0) {
+	if (rtl_http_req_send_hdr(req, conn, 0) < 0) {
 		rtl_http_req_discon(conn);
 		rtl_http_req_destroy(req);
 		return 1;
