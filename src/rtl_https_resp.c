@@ -106,7 +106,7 @@ int rtl_https_resp_read_hdrs(rtl_http_resp_t *resp,
 			while (*cp == ' ')
 				cp++;
 			cp2 = cp;
-			while (*cp2 != ' ' && *cp2 != 0)
+			while (*cp2 != '\r' && *cp2 != '\n' && *cp2 != 0)
 				cp2++;
 			*cp2 = 0;
 			resp->reason_phrase = strdup(cp);
