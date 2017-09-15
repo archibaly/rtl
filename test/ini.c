@@ -69,7 +69,7 @@ int parse_ini_file(char *ini_name)
 	rtl_ini_dump_ini(ini, stdout);
 
 	/* Get pizza attributes */
-	printf("Pizza:\n");
+	printf("Pizza has %d keys:\n", rtl_ini_get_sec_nkeys(ini, "pizza"));
 
 	b = rtl_ini_get_boolean(ini, "pizza:ham", -1);
 	printf("Ham:       [%d]\n", b);

@@ -875,9 +875,8 @@ rtl_json_t *rtl_json_parse_with_opts(const char *value,
 		if (return_parse_end != NULL) {
 			*return_parse_end =
 				(const char *)local_error.json + local_error.position;
-		} else {
-			global_error = local_error;
 		}
+		global_error = local_error;
 	}
 
 	return NULL;
