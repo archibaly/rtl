@@ -1,10 +1,16 @@
 #ifndef _RTL_LOG_H_
 #define _RTL_LOG_H_
 
-#define RTL_LOG_ERR		1
-#define RTL_LOG_WARNING	2
-#define RTL_LOG_INFO	3
-#define RTL_LOG_DEBUG	4
+#include <syslog.h>
+
+#define	RTL_LOG_EMERG	LOG_EMERG
+#define	RTL_LOG_ALERT	LOG_ALERT
+#define	RTL_LOG_CRIT	LOG_CRIT
+#define	RTL_LOG_ERR		LOG_ERR
+#define	RTL_LOG_WARNING	LOG_WARNING
+#define	RTL_LOG_NOTICE	LOG_NOTICE
+#define	RTL_LOG_INFO	LOG_INFO
+#define	RTL_LOG_DEBUG	LOG_DEBUG
 
 int rtl_log_open(const char *filename);
 void rtl_log_set_max_size(int bytes);

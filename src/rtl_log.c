@@ -42,21 +42,37 @@ static int log_level_string(int log_level, char *buf)
 	int pos = 0;
 
 	switch (log_level) {
+	case RTL_LOG_EMERG:
+		strcpy(buf, "[EMERG]");
+		pos = sizeof("[EMERG]") - 1;
+		break;
+	case RTL_LOG_ALERT:
+		strcpy(buf, "[ALERT]");
+		pos = sizeof("[ALERT]") - 1;
+		break;
+	case RTL_LOG_CRIT:
+		strcpy(buf, "[CRIT]");
+		pos = sizeof("[CRIT]") - 1;
+		break;
 	case RTL_LOG_ERR:
-		strcpy(buf, "[ERRO]");
-		pos = strlen("[ERRO]");
+		strcpy(buf, "[ERR]");
+		pos = sizeof("[ERR]") - 1;
 		break;
 	case RTL_LOG_WARNING:
-		strcpy(buf, "[WARN]");
-		pos = strlen("[WARN]");
+		strcpy(buf, "[WARNING]");
+		pos = sizeof("[WARNING]") - 1;
+		break;
+	case RTL_LOG_NOTICE:
+		strcpy(buf, "[NOTICE]");
+		pos = sizeof("[NOTICE]") - 1;
 		break;
 	case RTL_LOG_INFO:
 		strcpy(buf, "[INFO]");
-		pos = strlen("[INFO]");
+		pos = sizeof("[INFO]") - 1;
 		break;
 	case RTL_LOG_DEBUG:
-		strcpy(buf, "[DEBG]");
-		pos = strlen("[DEBG]");
+		strcpy(buf, "[DEBUG]");
+		pos = sizeof("[DEBUG]") - 1;
 		break;
 	default:
 		break;
